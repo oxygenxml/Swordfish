@@ -3,6 +3,8 @@
     <property name="target" value="17"/>
     <property name="source" value="17"/>
     <property name="build.compiler" value="javac10+"/>
+    
+    <!-- Define classpath for external libraries -->
     <path id="Swordfish.classpath">
         <pathelement location="jars/bcp47j.jar" />
         <pathelement location="jars/dtd.jar" />
@@ -13,9 +15,12 @@
         <pathelement location="jars/xmljava.jar" />
         <pathelement location="jars/sqlite-jdbc-3.48.0.0.jar" />
     </path>
+
     <condition property="isWindows"> 
         <os family="windows"/>
     </condition>
+
+    <!-- Initialize build directories -->
     <target name="init">
         <mkdir dir="out"/>
         <copy includeemptydirs="false" todir="out">
@@ -24,9 +29,13 @@
             </fileset>
         </copy>
     </target>
+
+    <!-- Clean build directories -->
     <target name="clean">
         <delete dir="out" failonerror="false"/>
     </target>
+
+    <!-- Distclean: remove old build artifacts -->
     <target name="distclean">
         <delete dir="dist" failonerror="false"/>
         <delete dir="bin" failonerror="false"/>
@@ -36,60 +45,74 @@
         <delete dir="lib" failonerror="false"/>
         <delete file="release"/>
     </target>
+
+    <!-- Compile Java sources and package into a JAR -->
     <target name="compile" depends="clean,init">
         <description>Build jar file</description>
         <delete file="jars/swordfish.jar"/>
-        <javac srcdir="src" destdir="out" classpathref="Swordfish.classpath" modulepathref="Swordfish.classpath" includeAntRuntime="false"/>
+        <javac srcdir="src" destdir="out" classpathref="Swordfish.classpath" includeAntRuntime="false"/>
         <jar destfile="jars/swordfish.jar" basedir="out"/>
     </target>
-    <target name="link" depends="distclean,compile">
-        <description>Build Java binaries</description>
-        <link destDir="dist" modulepath="jars:${java.home}/jmods">
-            <module name="swordfish"/>
-        </link>
-        <delete file="dist/lib/jrt-fs.jar"/>
+
+    <!-- Copy Windows platform-specific files -->
+    <target name="createDistDirs" depends="distclean">
+        <mkdir dir="dist/bin"/>
+        <mkdir dir="dist/conf"/>
+        <mkdir dir="dist/include"/>
+        <mkdir dir="dist/legal"/>
+        <mkdir dir="dist/lib"/>
     </target>
-    <target name="copyWindows" if="isWindows">
-        <description>Move java binaries to work folder</description>
-        <move todir=".\bin">
-            <fileset dir="dist\bin"/>
-        </move>
-         <move todir=".\conf">
-            <fileset dir="dist\conf"/>
-        </move>
-         <move todir=".\include">
-            <fileset dir="dist\include"/>
-        </move>
-         <move todir=".\legal">
-            <fileset dir="dist\legal"/>
-        </move>
-         <move todir=".\lib">
-            <fileset dir="dist\lib"/>
-        </move>
-        <move file="dist\release" todir="."/>
-        <delete dir="dist" failonerror="false"/>
-    </target>
+
+	<target name="copyWindows" depends="createDistDirs" if="isWindows">
+	    <description>Move java binaries to work folder</description>
+	    
+	    <!-- Move files as usual -->
+	    <move todir=".\bin">
+	        <fileset dir="dist\bin"/>
+	    </move>
+	    <move todir=".\conf">
+	        <fileset dir="dist\conf"/>
+	    </move>
+	    <move todir=".\include">
+	        <fileset dir="dist\include"/>
+	    </move>
+	    <move todir=".\legal">
+	        <fileset dir="dist\legal"/>
+	    </move>
+	    <move todir=".\lib">
+	        <fileset dir="dist\lib"/>
+	    </move>
+
+	    <!-- Clean up -->
+	    <delete dir="dist" failonerror="false"/>
+	</target>
+
+
+    <!-- Copy Unix platform-specific files -->
     <target name="copyUnix" unless="isWindows">
         <description>Move java binaries to work folder</description>
         <move todir="./bin">
             <fileset dir="dist/bin"/>
         </move>
-         <move todir="./conf">
+        <move todir="./conf">
             <fileset dir="dist/conf"/>
         </move>
-         <move todir="./include">
+        <move todir="./include">
             <fileset dir="dist/include"/>
         </move>
-         <move todir="./legal">
+        <move todir="./legal">
             <fileset dir="dist/legal"/>
         </move>
-         <move todir="./lib">
+        <move todir="./lib">
             <fileset dir="dist/lib"/>
         </move>
         <move file="dist/release" todir="."/>
         <delete dir="dist" failonerror="false"/>
+        <delete file="jars/swordfish.jar" />
     </target>
-    <target name="dist" depends="link,copyWindows,copyUnix">
+
+    <!-- Prepare the distribution folder -->
+    <target name="dist" depends="compile,copyWindows,copyUnix">
         <description>Prepare distribution</description>
     </target>
 </project>
