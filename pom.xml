@@ -5,12 +5,12 @@
     <artifactId>oxygen-patched-superpom</artifactId>
     <version>27.1-SNAPSHOT</version>
   </parent>
-  <artifactId>oxygen-pathced-swordfish</artifactId>
+  <artifactId>oxygen-patched-swordfish</artifactId>
   <version>5.1.0-SNAPSHOT</version>
   <dependencies>
 	  <dependency>
           <groupId>com.oxygenxml</groupId>
-          <artifactId>oxygen-pathced-openxliff</artifactId>
+          <artifactId>oxygen-patched-openxliff</artifactId>
           <version>4.2.0-SNAPSHOT</version>
       </dependency>  
 	  <dependency>
