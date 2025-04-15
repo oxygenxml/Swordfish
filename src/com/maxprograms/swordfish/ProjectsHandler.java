@@ -99,131 +99,133 @@ public class ProjectsHandler implements HttpHandler {
     }
   }
 
-  private JSONObject processRequest(String url, String request) {
-    JSONObject response = new JSONObject();
-    try {
-      if ("/projects/create".equals(url)) {
-        response = createProject(request);
-      } else if ("/projects/update".equals(url)) {
-        response = updateProject(request);
-      } else if ("/projects/list".equals(url)) {
-        response = listProjects();
-      } else if ("/projects/get".equals(url)) {
-        response = getProject(request);
-      } else if ("/projects/delete".equals(url)) {
-        response = deleteProjects(request);
-      } else if ("/projects/translations".equals(url)) {
-        response = exportTranslations(request);
-      } else if ("/projects/export".equals(url)) {
-        response = export(request);
-      } else if ("/projects/exportReview".equals(url)) {
-        response = exportReview(request);
-      } else if ("/projects/importReview".equals(url)) {
-        response = importReview(request);
-      } else if ("/projects/import".equals(url)) {
-        response = importXliff(request);
-      } else if ("/projects/status".equals(url)) {
-        response = getProcessStatus(request);
-      } else if ("/projects/close".equals(url)) {
-        response = closeProject(request);
-      } else if ("/projects/files".equals(url)) {
-        response = getProjectFiles(request);
-      } else if ("/projects/segments".equals(url)) {
-        response = getSegments(request);
-      } else if ("/projects/segmentSource".equals(url)) {
-        response = getSegmentSource(request);
-      } else if ("/projects/setMTMatches".equals(url)) {
-        response = setMTMatches(request);
-      } else if ("/projects/count".equals(url)) {
-        response = getSegmentsCount(request);
-      } else if ("/projects/save".equals(url)) {
-        response = save(request);
-      } else if ("/projects/saveSource".equals(url)) {
-        response = saveSource(request);
-      } else if ("/projects/matches".equals(url)) {
-        response = getMatches(request);
-      } else if ("/projects/assembleMatches".equals(url)) {
-        response = assembleMatches(request);
-      } else if ("/projects/applyAmAll".equals(url)) {
-        response = assembleMatchesAll(request);
-      } else if ("/projects/removeAssembledMatches".equals(url)) {
-        response = removeAssembledMatches(request);
-      } else if ("/projects/tmTranslate".equals(url)) {
-        response = tmTranslate(request);
-      } else if ("/projects/tmTranslateAll".equals(url)) {
-        response = tmTranslateAll(request);
-      } else if ("/projects/projectMemories".equals(url)) {
-        response = getProjectMemories(request);
-      } else if ("/projects/setMemory".equals(url)) {
-        response = setProjectMemory(request);
-      } else if ("/projects/exportTmx".equals(url)) {
-        response = exportTMX(request);
-      } else if ("/projects/exportMatches".equals((url))) {
-        response = exportMatches(request);
-      } else if ("/projects/exportTerms".equals((url))) {
-        response = exportTerms(request);
-      } else if ("/projects/removeTranslations".equals(url)) {
-        response = removeTranslations(request);
-      } else if ("/projects/unconfirmTranslations".equals(url)) {
-        response = unconfirmTranslations(request);
-      } else if ("/projects/pseudoTranslate".equals(url)) {
-        response = pseudoTranslate(request);
-      } else if ("/projects/copyAllSources".equals(url)) {
-        response = copyAllSources(request);
-      } else if ("/projects/confirmAllTranslations".equals(url)) {
-        response = confirmAllTranslations(request);
-      } else if ("/projects/acceptAll100Matches".equals(url)) {
-        response = acceptAll100Matches(request);
-      } else if ("/projects/generateStatistics".equals(url)) {
-        response = generateStatistics(request);
-      } else if ("/projects/exportHtml".equals(url)) {
-        response = exportHTML(request);
-      } else if ("/projects/replaceText".equals(url)) {
-        response = replaceText(request);
-      } else if ("/projects/applyMtAll".equals(url)) {
-        response = applyMtAll(request);
-      } else if ("/projects/acceptAllMT".equals(url)) {
-        response = acceptAllMT(request);
-      } else if ("/projects/removeMatches".equals(url)) {
-        response = removeMatches(request);
-      } else if ("/projects/removeMT".equals(url)) {
-        response = removeMT(request);
-      } else if ("/projects/setGlossary".equals(url)) {
-        response = setProjectGlossary(request);
-      } else if ("/projects/projectGlossaries".equals(url)) {
-        response = getProjectGlossaries(request);
-      } else if ("/projects/terms".equals(url)) {
-        response = getTerms(request);
-      } else if ("/projects/getSegmentTerms".equals(url)) {
-        response = getSegmentTerms(request);
-      } else if ("/projects/getProjectTerms".equals(url)) {
-        response = getProjectTerms(request);
-      } else if ("/projects/lockSegment".equals(url)) {
-        response = lockSegment(request);
-      } else if ("/projects/lockDuplicates".equals(url)) {
-        response = lockDuplicates(request);
-      } else if ("/projects/unlockAll".equals(url)) {
-        response = unlockAll(request);
-      } else if ("/projects/analyzeSpaces".equals(url)) {
-        response = analyzeSpaces(request);
-      } else if ("/projects/fixSpaces".equals(url)) {
-        response = fixSpaces(request);
-      } else if ("/projects/analyzeTags".equals(url)) {
-        response = analyzeTags(request);
-      } else if ("/projects/splitSegment".equals(url)) {
-        response = splitSegment(request);
-      } else if ("/projects/mergeSegment".equals(url)) {
-        response = mergeSegment(request);
-      } else if ("/projects/getNotes".equals(url)) {
-        response = getNotes(request);
-      } else if ("/projects/addNote".equals(url)) {
-        response = addNote(request);
-      } else if ("/projects/removeNote".equals(url)) {
-        response = removeNote(request);
-      } else {
-        MessageFormat mf = new MessageFormat(Messages.getString("ProjectsHandler.1"));
-        response.put(Constants.REASON, mf.format(new String[] { url }));
-      }
+	private JSONObject processRequest(String url, String request) {
+		JSONObject response = new JSONObject();
+		try {
+			if ("/projects/create".equals(url)) {
+				response = createProject(request);
+			} else if ("/projects/update".equals(url)) {
+				response = updateProject(request);
+			} else if ("/projects/list".equals(url)) {
+				response = listProjects();
+			} else if ("/projects/get".equals(url)) {
+				response = getProject(request);
+			} else if ("/projects/delete".equals(url)) {
+				response = deleteProjects(request);
+			} else if ("/projects/translations".equals(url)) {
+				response = exportTranslations(request);
+			} else if ("/projects/export".equals(url)) {
+				response = export(request);
+			} else if ("/projects/exportReview".equals(url)) {
+				response = exportReview(request);
+			} else if ("/projects/importReview".equals(url)) {
+				response = importReview(request);
+			} else if ("/projects/import".equals(url)) {
+				response = importXliff(request);
+			} else if ("/projects/status".equals(url)) {
+				response = getProcessStatus(request);
+			} else if ("/projects/close".equals(url)) {
+				response = closeProject(request);
+			} else if ("/projects/files".equals(url)) {
+				response = getProjectFiles(request);
+			} else if ("/projects/segments".equals(url)) {
+				response = getSegments(request);
+			} else if ("/projects/segmentSource".equals(url)) {
+				response = getSegmentSource(request);
+			} else if ("/projects/setMTMatches".equals(url)) {
+				response = setMTMatches(request);
+			} else if ("/projects/count".equals(url)) {
+				response = getSegmentsCount(request);
+			} else if ("/projects/save".equals(url)) {
+				response = save(request);
+			} else if ("/projects/saveSource".equals(url)) {
+				response = saveSource(request);
+			} else if ("/projects/matches".equals(url)) {
+				response = getMatches(request);
+			} else if ("/projects/assembleMatches".equals(url)) {
+				response = assembleMatches(request);
+			} else if ("/projects/applyAmAll".equals(url)) {
+				response = assembleMatchesAll(request);
+			} else if ("/projects/removeAssembledMatches".equals(url)) {
+				response = removeAssembledMatches(request);
+			} else if ("/projects/tmTranslate".equals(url)) {
+				response = tmTranslate(request);
+			} else if ("/projects/tmTranslateAll".equals(url)) {
+				response = tmTranslateAll(request);
+			} else if ("/projects/projectMemories".equals(url)) {
+				response = getProjectMemories(request);
+			} else if ("/projects/setMemory".equals(url)) {
+				response = setProjectMemory(request);
+			} else if ("/projects/exportTmx".equals(url)) {
+				response = exportTMX(request);
+			} else if ("/projects/exportMatches".equals((url))) {
+				response = exportMatches(request);
+			} else if ("/projects/exportTerms".equals((url))) {
+				response = exportTerms(request);
+			} else if ("/projects/removeTranslations".equals(url)) {
+				response = removeTranslations(request);
+			} else if ("/projects/unconfirmTranslations".equals(url)) {
+				response = unconfirmTranslations(request);
+			} else if ("/projects/pseudoTranslate".equals(url)) {
+				response = pseudoTranslate(request);
+			} else if ("/projects/copyAllSources".equals(url)) {
+				response = copyAllSources(request);
+			} else if ("/projects/confirmAllTranslations".equals(url)) {
+				response = confirmAllTranslations(request);
+			} else if ("/projects/acceptAll100Matches".equals(url)) {
+				response = acceptAll100Matches(request);
+			} else if ("/projects/generateStatistics".equals(url)) {
+				response = generateStatistics(request);
+			} else if ("/projects/exportHtml".equals(url)) {
+				response = exportHTML(request);
+			} else if ("/projects/replaceText".equals(url)) {
+				response = replaceText(request);
+			} else if ("/projects/applyMtAll".equals(url)) {
+				response = applyMtAll(request);
+			} else if ("/projects/acceptAllMT".equals(url)) {
+				response = acceptAllMT(request);
+			} else if ("/projects/removeMatches".equals(url)) {
+				response = removeMatches(request);
+			} else if ("/projects/removeMT".equals(url)) {
+				response = removeMT(request);
+			} else if ("/projects/setGlossary".equals(url)) {
+				response = setProjectGlossary(request);
+			} else if ("/projects/projectGlossaries".equals(url)) {
+				response = getProjectGlossaries(request);
+			} else if ("/projects/terms".equals(url)) {
+				response = getTerms(request);
+			} else if ("/projects/getSegmentTerms".equals(url)) {
+				response = getSegmentTerms(request);
+			} else if ("/projects/getProjectTerms".equals(url)) {
+				response = getProjectTerms(request);
+			} else if ("/projects/lockSegment".equals(url)) {
+				response = lockSegment(request);
+			} else if ("/projects/lockDuplicates".equals(url)) {
+				response = lockDuplicates(request);
+			} else if ("/projects/unlockAll".equals(url)) {
+				response = unlockAll(request);
+			} else if ("/projects/analyzeSpaces".equals(url)) {
+				response = analyzeSpaces(request);
+			} else if ("/projects/fixSpaces".equals(url)) {
+				response = fixSpaces(request);
+			} else if ("/projects/getMatchData".equals(url)) {
+				response = getMatchData(request);
+			} else if ("/projects/analyzeTags".equals(url)) {
+				response = analyzeTags(request);
+			} else if ("/projects/splitSegment".equals(url)) {
+				response = splitSegment(request);
+			} else if ("/projects/mergeSegment".equals(url)) {
+				response = mergeSegment(request);
+			} else if ("/projects/getNotes".equals(url)) {
+				response = getNotes(request);
+			} else if ("/projects/addNote".equals(url)) {
+				response = addNote(request);
+			} else if ("/projects/removeNote".equals(url)) {
+				response = removeNote(request);
+			} else {
+				MessageFormat mf = new MessageFormat(Messages.getString("ProjectsHandler.1"));
+				response.put(Constants.REASON, mf.format(new String[] { url }));
+			}
 
       if (!response.has(Constants.REASON)) {
         response.put(Constants.STATUS, Constants.SUCCESS);
@@ -1748,36 +1750,51 @@ public class ProjectsHandler implements HttpHandler {
     return result;
   }
 
-  private JSONObject analyzeSpaces(String request) {
-    JSONObject result = new JSONObject();
-    JSONObject json = new JSONObject(request);
-    try {
-      String project = json.getString("project");
-      if (projectStores.containsKey(project)) {
-        result = projectStores.get(project).analyzeSpaces();
-      }
-    } catch (SQLException | JSONException | IOException | SAXException | ParserConfigurationException e) {
-      logger.log(Level.ERROR, e);
-      result.put(Constants.REASON, e.getMessage());
-    }
-    return result;
-  }
+	private JSONObject analyzeSpaces(String request) {
+		JSONObject result = new JSONObject();
+		JSONObject json = new JSONObject(request);
+		try {
+			String project = json.getString("project");
+			if (projectStores.containsKey(project)) {
+				result = projectStores.get(project).analyzeSpaces();
+			}
+		} catch (SQLException | JSONException | IOException | SAXException | ParserConfigurationException e) {
+			logger.log(Level.ERROR, e);
+			result.put(Constants.REASON, e.getMessage());
+		}
+		return result;
+	}
 
-  private JSONObject fixSpaces(String request) {
-    JSONObject result = new JSONObject();
-    JSONObject json = new JSONObject(request);
-    try {
-      String project = json.getString("project");
-      if (projectStores.containsKey(project)) {
-        projectStores.get(project).fixSpaces();
-        result = projectStores.get(project).analyzeSpaces();
-      }
-    } catch (SQLException | JSONException | SAXException | IOException | ParserConfigurationException e) {
-      logger.log(Level.ERROR, e);
-      result.put(Constants.REASON, e.getMessage());
-    }
-    return result;
-  }
+	private JSONObject fixSpaces(String request) {
+		JSONObject result = new JSONObject();
+		JSONObject json = new JSONObject(request);
+		try {
+			String project = json.getString("project");
+			if (projectStores.containsKey(project)) {
+				projectStores.get(project).fixSpaces();
+				result = projectStores.get(project).analyzeSpaces();
+			}
+		} catch (SQLException | JSONException | SAXException | IOException | ParserConfigurationException e) {
+			logger.log(Level.ERROR, e);
+			result.put(Constants.REASON, e.getMessage());
+		}
+		return result;
+	}
+
+	private JSONObject getMatchData(String request) {
+		JSONObject result = new JSONObject();
+		JSONObject json = new JSONObject(request);
+		try {
+			String project = json.getString("project");
+			if (projectStores.containsKey(project)) {
+				result.put("matchData", projectStores.get(project).getMatchData(json));
+			}
+		} catch (JSONException | SQLException e) {
+			logger.log(Level.ERROR, e);
+			result.put(Constants.REASON, e.getMessage());
+		}
+		return result;
+	}
 
   private JSONObject analyzeTags(String request) {
     JSONObject result = new JSONObject();
