@@ -164,6 +164,7 @@
       <plugin>
         <groupId>ro.sync.compliance</groupId>
         <artifactId>compliance-mvn-dependency-check-to-sbom</artifactId>
+        <version>1.0.0-SNAPSHOT</version>
         <configuration>
           <tags>jira-fdt, rocket-raccoons</tags>
           </configuration>
