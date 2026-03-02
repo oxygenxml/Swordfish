@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (c) 2007 - 2025 Maxprograms.
+ * Copyright (c) 2007-2026 Maxprograms.
  *
  * This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License 1.0
@@ -10,48 +10,48 @@
  *     Maxprograms - initial API and implementation
  *******************************************************************************/
 
-class AddMemory {
+import { ipcRenderer, IpcRendererEvent } from "electron";
 
-    electron = require('electron');
+export class AddMemory {
 
     constructor() {
-        this.electron.ipcRenderer.send('get-theme');
-        this.electron.ipcRenderer.on('set-theme', (event: Electron.IpcRendererEvent, arg: any) => {
-            (document.getElementById('theme') as HTMLLinkElement).href = arg;
+        ipcRenderer.send('get-theme');
+        ipcRenderer.on('set-theme', (event: IpcRendererEvent, theme: string) => {
+            (document.getElementById('theme') as HTMLLinkElement).href = theme;
         });
-        this.electron.ipcRenderer.send('get-project-names');
-        this.electron.ipcRenderer.on('set-project-names', (event: Electron.IpcRendererEvent, arg: any) => {
-            this.setProjectNames(arg);
+        ipcRenderer.send('get-project-names');
+        ipcRenderer.on('set-project-names', (event: IpcRendererEvent, projects: string[]) => {
+            this.setProjectNames(projects);
         });
-        this.electron.ipcRenderer.send('get-clients');
-        this.electron.ipcRenderer.on('set-clients', (event: Electron.IpcRendererEvent, arg: any) => {
-            this.setClients(arg);
+        ipcRenderer.send('get-clients');
+        ipcRenderer.on('set-clients', (event: IpcRendererEvent, clients: string[]) => {
+            this.setClients(clients);
         });
-        this.electron.ipcRenderer.send('get-subjects');
-        this.electron.ipcRenderer.on('set-subjects', (event: Electron.IpcRendererEvent, arg: any) => {
-            this.setSubjects(arg);
+        ipcRenderer.send('get-subjects');
+        ipcRenderer.on('set-subjects', (event: IpcRendererEvent, subjects: string[]) => {
+            this.setSubjects(subjects);
         });
         document.addEventListener('keydown', (event: KeyboardEvent) => {
             if (event.code === 'Enter' || event.code === 'NumpadEnter') {
                 this.addMemory();
             }
             if (event.code === 'Escape') {
-                this.electron.ipcRenderer.send('close-addMemory');
+                ipcRenderer.send('close-addMemory');
             }
         });
-        document.getElementById('addMemoryButton').addEventListener('click', () => {
+        (document.getElementById('addMemoryButton') as HTMLButtonElement).addEventListener('click', () => {
             this.addMemory();
         });
         (document.getElementById('nameInput') as HTMLInputElement).focus();
         setTimeout(() => {
-            this.electron.ipcRenderer.send('set-height', { window: 'addMemory', width: document.body.clientWidth, height: document.body.clientHeight });
+            ipcRenderer.send('set-height', { window: 'addMemory', width: document.body.clientWidth, height: document.body.clientHeight });
         }, 200);
     }
 
     addMemory(): void {
         let name: string = (document.getElementById('nameInput') as HTMLInputElement).value;
         if (name === '') {
-            this.electron.ipcRenderer.send('show-message', { type: 'warning', message: 'Enter name', parent: 'addMemory' });
+            ipcRenderer.send('show-message', { type: 'warning', message: 'Enter name', parent: 'addMemory' });
             return;
         }
         let params: any = {
@@ -60,7 +60,7 @@ class AddMemory {
             subject: (document.getElementById('subjectInput') as HTMLInputElement).value,
             client: (document.getElementById('clientInput') as HTMLInputElement).value
         }
-        this.electron.ipcRenderer.send('add-memory', params);
+        ipcRenderer.send('add-memory', params);
     }
 
     setProjectNames(projects: string[]): void {
@@ -69,7 +69,7 @@ class AddMemory {
         for (let i = 0; i < length; i++) {
             options = options + '<option value="' + projects[i] + '">' + projects[i] + '</option>';
         }
-        document.getElementById('projects').innerHTML = options;
+        (document.getElementById('projects') as HTMLDataListElement).innerHTML = options;
     }
 
     setClients(clients: string[]): void {
@@ -78,7 +78,7 @@ class AddMemory {
         for (let i = 0; i < length; i++) {
             options = options + '<option value="' + clients[i] + '">' + clients[i] + '</option>';
         }
-        document.getElementById('clients').innerHTML = options;
+        (document.getElementById('clients') as HTMLDataListElement).innerHTML = options;
     }
 
     setSubjects(subjects: string[]): void {
@@ -87,6 +87,6 @@ class AddMemory {
         for (let i = 0; i < length; i++) {
             options = options + '<option value="' + subjects[i] + '">' + subjects[i] + '</option>';
         }
-        document.getElementById('subjects').innerHTML = options;
+        (document.getElementById('subjects') as HTMLDataListElement).innerHTML = options;
     }
 }

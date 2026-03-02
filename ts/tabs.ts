@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (c) 2007 - 2025 Maxprograms.
+ * Copyright (c) 2007-2026 Maxprograms.
  *
  * This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License 1.0
@@ -10,7 +10,7 @@
  *     Maxprograms - initial API and implementation
  *******************************************************************************/
 
-class Tab {
+export class Tab {
 
     id: string;
     label: HTMLAnchorElement;
@@ -19,7 +19,8 @@ class Tab {
     parent: TabHolder;
     closeable: boolean;
 
-    constructor(tabId: string, description: string, closeable: boolean) {
+    constructor(tabId: string, description: string, closeable: boolean, parent: TabHolder) {
+        this.parent = parent;
         this.id = tabId;
         this.labelDiv = document.createElement('div');
         this.labelDiv.classList.add('tab');
@@ -33,6 +34,7 @@ class Tab {
         } else {
             this.label.innerText = description;
         }
+        this.label.classList.add('noWrap');
         this.label.addEventListener('click', () => {
             this.parent.selectTab(this.id);
         });
@@ -50,10 +52,6 @@ class Tab {
         this.container.style.width = '100%';
         this.container.style.height = '100%';
         this.container.classList.add('hidden');
-    }
-
-    setParent(holder: TabHolder): void {
-        this.parent = holder;
     }
 
     getId(): string {
@@ -91,7 +89,7 @@ class Tab {
     }
 }
 
-class TabHolder {
+export class TabHolder {
 
     labels: Map<string, HTMLDivElement>;
     tabs: Map<string, Tab>;
@@ -101,7 +99,7 @@ class TabHolder {
     contentHolder: HTMLDivElement;
 
     tabsList: string[] = [];
-    selectedTab: string;
+    selectedTab: string = '';
 
     constructor(parent: HTMLDivElement, id: string) {
         this.labels = new Map<string, HTMLDivElement>();
@@ -127,6 +125,14 @@ class TabHolder {
         return this.tabsHolder.clientHeight;
     }
 
+    setEmptyMessage(svgImage: string, emptyText: string): void {
+        this.contentHolder.innerHTML = '<div style="width: 100%; height: 100%; display: flex; align-items: center; flex-direction: column; justify-content: center;">' +
+            '<div class="svgContainer">' +
+            svgImage +
+            '</div>' +
+            '<p style="font-size: 20px;">' + emptyText + '</p></div>';
+    }
+
     clear(): void {
         this.labels.forEach((value) => {
             this.tabsHolder.removeChild(value);
@@ -137,11 +143,10 @@ class TabHolder {
         });
         this.tabs.clear();
         this.tabsList = [];
-        this.selectedTab = undefined;
+        this.selectedTab = '';
     }
 
     addTab(tab: Tab): void {
-        tab.setParent(this);
         this.tabsHolder.insertBefore(tab.getLabelDiv(), this.filler);
         this.labels.set(tab.getId(), tab.getLabelDiv());
         this.contentHolder.appendChild(tab.getContainer());
@@ -157,7 +162,9 @@ class TabHolder {
         this.tabs.forEach((value, key) => {
             value.setSelected(tabId === key);
         });
-        this.selectedTab = tabId;
+        if (this.tabs.has(tabId)) {
+            this.selectedTab = tabId;
+        }
     }
 
     getSelected(): string {
@@ -165,16 +172,19 @@ class TabHolder {
     }
 
     canClose(tabId: string): boolean {
-        return this.closeable.get(tabId);
+        if (this.closeable.has(tabId)) {
+            return this.closeable.get(tabId) as boolean;
+        }
+        return false;
     }
 
     closeTab(tabId: string): void {
         if (tabId === this.selectedTab && this.tabsList.length > 1) {
             this.selectTab(this.tabsList[0]);
         }
-        this.tabsHolder.removeChild(this.labels.get(tabId));
+        this.tabsHolder.removeChild(this.labels.get(tabId) as HTMLDivElement);
         this.labels.delete(tabId);
-        this.contentHolder.removeChild(this.tabs.get(tabId).getContainer());
+        this.contentHolder.removeChild((this.tabs.get(tabId) as Tab).getContainer());
         this.tabs.delete(tabId);
         this.closeable.delete(tabId);
         this.tabsList.splice(this.tabsList.indexOf(tabId), 1);
@@ -182,6 +192,10 @@ class TabHolder {
 
     has(tabId: string): boolean {
         return this.labels.has(tabId);
+    }
+
+    getTab(tabId: string): Tab | undefined {
+        return this.tabs.get(tabId);
     }
 
     getTabsHolder(): HTMLDivElement {

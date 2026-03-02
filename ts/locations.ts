@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (c) 2007 - 2025 Maxprograms.
+ * Copyright (c) 2007-2026 Maxprograms.
  *
  * This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License 1.0
@@ -9,7 +9,8 @@
  * Contributors:
  *     Maxprograms - initial API and implementation
  *******************************************************************************/
-import { existsSync, readFileSync, writeFile } from "fs";
+
+import { existsSync, readFileSync, writeFileSync } from "node:fs";
 
 export class Point {
 
@@ -38,7 +39,7 @@ export class Locations {
                     this.locations.set(key, new Point((value as any).x, (value as any).y));
                 }
             } catch (err: any) {
-                if (err instanceof Error    ) {
+                if (err instanceof Error) {
                     console.error(err.message);
                     return;
                 }
@@ -60,15 +61,13 @@ export class Locations {
         });
         text = text.substring(0, text.length - 1) + '}'
         let json = JSON.parse(text);
-        writeFile(this.file, JSON.stringify(json, null, 2), (err: Error) => {
-            if (err) throw err;
-        });
+        writeFileSync(this.file, JSON.stringify(json, null, 2));
     }
 
-    getLocation(window: string): Point {
+    getLocation(window: string): Point | undefined {
         if (this.locations.has(window)) {
             return this.locations.get(window);
         }
-        return null;
+        return undefined;
     }
 }

@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (c) 2007 - 2025 Maxprograms.
+ * Copyright (c) 2007-2026 Maxprograms.
  *
  * This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License 1.0
@@ -9,24 +9,28 @@
  * Contributors:
  *     Maxprograms - initial API and implementation
  *******************************************************************************/
-import { Catalog, ContentHandler, XMLAttribute, XMLElement } from "typesxml";
-import { MTManager } from "./mtManager";
+
+import { Catalog, ContentHandler, Grammar, XMLAttribute, XMLElement } from "typesxml";
+import { MTManager } from "./mtManager.js";
 
 export class MTContentHandler implements ContentHandler {
 
     mtManager: MTManager;
     project: string;
-    file: string;
-    unit: string;
-    segment: string;
-    srcLang: string;
-    tgtLang: string;
+    file: string = '';
+    unit: string = '';
+    segment: string = '';
+    srcLang: string = '';
+    tgtLang: string = '';
+
+    pendingTranslations: Promise<void>[];
 
     stack: Array<XMLElement>
 
-    constructor(mtManager: MTManager, project: string) {
+    constructor(mtManager: MTManager, project: string, pendingTranslations: Promise<void>[]) {
         this.mtManager = mtManager;
         this.project = project;
+        this.pendingTranslations = pendingTranslations;
         this.stack = new Array<XMLElement>();
     }
 
@@ -35,6 +39,10 @@ export class MTContentHandler implements ContentHandler {
     }
 
     setCatalog(catalog: Catalog): void {
+        // do nothing
+    }
+
+    setValidating(validating: boolean): void {
         // do nothing
     }
 
@@ -56,20 +64,20 @@ export class MTContentHandler implements ContentHandler {
             element.setAttribute(att);
         });
         if (name === 'xliff') {
-            this.srcLang = element.getAttribute('srcLang').getValue();
-            this.tgtLang = element.getAttribute('tgtLang').getValue();
+            this.srcLang = (element.getAttribute('srcLang') as XMLAttribute).getValue();
+            this.tgtLang = (element.getAttribute('tgtLang') as XMLAttribute).getValue();
             return;
         }
         if (name === 'file') {
-            this.file = element.getAttribute('id').getValue();
+            this.file = (element.getAttribute('id') as XMLAttribute).getValue();
             return;
         }
         if (name === 'unit') {
-            this.unit = element.getAttribute('id').getValue();
+            this.unit = (element.getAttribute('id') as XMLAttribute).getValue();
             return;
         }
         if (name === 'segment') {
-            this.segment = element.getAttribute('id').getValue();
+            this.segment = (element.getAttribute('id') as XMLAttribute).getValue();
         }
         if (this.stack.length > 0) {
             this.stack[this.stack.length - 1].addElement(element);
@@ -81,7 +89,7 @@ export class MTContentHandler implements ContentHandler {
         if (name === 'xliff' || name === 'file' || name === 'unit') {
             return;
         }
-        let e: XMLElement = this.stack.pop();
+        let e: XMLElement = this.stack.pop() as XMLElement;
         if (name === 'segment') {
             this.translate(e);
             this.stack = new Array<XMLElement>();
@@ -131,7 +139,16 @@ export class MTContentHandler implements ContentHandler {
     }
 
     translate(segment: XMLElement): void {
-        let source: XMLElement = segment.getChild('source');
-        this.mtManager.translateElement(source, this.project, this.file, this.unit, this.segment);
+        let source: XMLElement = segment.getChild('source') as XMLElement;
+        let promise: Promise<void> = this.mtManager.translateElement(source, this.project, this.file, this.unit, this.segment, []);
+        this.pendingTranslations.push(promise);
+    }
+
+    getGrammar(): Grammar | undefined {
+        return undefined;
+    }
+
+    setGrammar(grammar: Grammar | undefined): void {
+        // do nothing
     }
 }

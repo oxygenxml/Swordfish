@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (c) 2007 - 2025 Maxprograms.
+ * Copyright (c) 2007-2026 Maxprograms.
  *
  * This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License 1.0
@@ -10,67 +10,92 @@
  *     Maxprograms - initial API and implementation
  *******************************************************************************/
 
-class PreferencesDialog {
+import { ipcRenderer, IpcRendererEvent } from "electron";
+import { Preferences } from "./preferences.js";
+import { Tab, TabHolder } from "./tabs.js";
+import { Language } from "typesbcp47";
 
-    electron = require('electron');
+export class PreferencesDialog {
 
-    static readonly defaultWidth: number = 640;
+    static readonly defaultWidth: number = 680;
 
     tabHolder: TabHolder;
     spellcheckTab: Tab;
 
-    srcLangSelect: HTMLSelectElement;
-    tgtLangSelect: HTMLSelectElement;
-    themeColor: HTMLSelectElement;
-    zoomFactor: HTMLSelectElement;
+    srcLangSelect: HTMLSelectElement = document.createElement('select');
+    tgtLangSelect: HTMLSelectElement = document.createElement('select');
+    themeColor: HTMLSelectElement = document.createElement('select');
+    zoomFactor: HTMLSelectElement = document.createElement('select');
+    userNameInput: HTMLInputElement = document.createElement('input');
+    matchThreshold: HTMLInputElement = document.createElement('input');
 
-    projectFolder: HTMLInputElement;
-    memoriesFolder: HTMLInputElement;
-    glossariesFolder: HTMLInputElement;
-    defaultSRX: HTMLInputElement;
-    defaultCatalog: HTMLInputElement;
-    paragraphSegmentation: HTMLInputElement;
-    acceptUnconfirmed: HTMLInputElement;
-    fuzzyTermSearches: HTMLInputElement;
-    caseSensitiveTermSearches: HTMLInputElement;
-    caseSensitiveMatches: HTMLInputElement;
-    autoConfirm: HTMLInputElement;
+    projectFolder: HTMLInputElement = document.createElement('input');
+    memoriesFolder: HTMLInputElement = document.createElement('input');
+    glossariesFolder: HTMLInputElement = document.createElement('input');
+    defaultSRX: HTMLInputElement = document.createElement('input');
+    defaultReviewModel: HTMLInputElement = document.createElement('input');
+    defaultCatalog: HTMLInputElement = document.createElement('input');
+    paragraphSegmentation: HTMLInputElement = document.createElement('input');
+    acceptUnconfirmed: HTMLInputElement = document.createElement('input');
+    fuzzyTermSearches: HTMLInputElement = document.createElement('input');
+    caseSensitiveTermSearches: HTMLInputElement = document.createElement('input');
+    caseSensitiveMatches: HTMLInputElement = document.createElement('input');
+    autoConfirm: HTMLInputElement = document.createElement('input');
 
-    enableGoogle: HTMLInputElement;
-    googleKey: HTMLInputElement;
-    googleSrcLang: HTMLSelectElement;
-    googleTgtLang: HTMLSelectElement;
+    enableGoogle: HTMLInputElement = document.createElement('input');
+    googleKey: HTMLInputElement = document.createElement('input');
+    googleSrcLang: HTMLSelectElement = document.createElement('select');
+    googleTgtLang: HTMLSelectElement = document.createElement('select');
 
-    enableAzure: HTMLInputElement;
-    azureKey: HTMLInputElement;
-    azureSrcLang: HTMLSelectElement;
-    azureTgtLang: HTMLSelectElement;
+    enableAzure: HTMLInputElement = document.createElement('input');
+    azureKey: HTMLInputElement = document.createElement('input');
+    azureSrcLang: HTMLSelectElement = document.createElement('select');
+    azureTgtLang: HTMLSelectElement = document.createElement('select');
 
-    enableDeepL: HTMLInputElement;
-    deeplKey: HTMLInputElement;
-    deeplSrcLang: HTMLSelectElement;
-    deeplTgtLang: HTMLSelectElement;
+    enableDeepL: HTMLInputElement = document.createElement('input');
+    deeplKey: HTMLInputElement = document.createElement('input');
+    deeplSrcLang: HTMLSelectElement = document.createElement('select');
+    deeplTgtLang: HTMLSelectElement = document.createElement('select');
 
-    enableChatGPT: HTMLInputElement;
-    chatGPTKey: HTMLInputElement;
-    chatGPTModel: HTMLSelectElement;
+    enableChatGPT: HTMLInputElement = document.createElement('input');
+    chatGPTKey: HTMLInputElement = document.createElement('input');
+    chatGPTModel: HTMLInputElement = document.createElement('input');
+    chatGptFixTags: HTMLInputElement = document.createElement('input');
 
-    enableModernmt: HTMLInputElement;
-    modernmtKey: HTMLInputElement;
-    modernmtSrcLang: HTMLSelectElement;
-    modernmtTgtLang: HTMLSelectElement;
+    enableAnthropic: HTMLInputElement = document.createElement('input');
+    anthropicKey: HTMLInputElement = document.createElement('input');
+    anthropicModel: HTMLInputElement = document.createElement('input');
+    anthropicFixTags: HTMLInputElement = document.createElement('input');
 
-    defaultEnglish: HTMLSelectElement;
-    defaultPortuguese: HTMLSelectElement;
-    defaultSpanish: HTMLSelectElement;
+    enableMistral: HTMLInputElement = document.createElement('input');
+    mistralKey: HTMLInputElement = document.createElement('input');
+    mistralModel: HTMLInputElement = document.createElement('input');
+    mistralFixTags: HTMLInputElement = document.createElement('input');
 
-    os: string;
-    showGuide: boolean;
+    enableModernmt: HTMLInputElement = document.createElement('input');
+    modernmtKey: HTMLInputElement = document.createElement('input');
+    modernmtSrcLang: HTMLSelectElement = document.createElement('select');
+    modernmtTgtLang: HTMLSelectElement = document.createElement('select');
 
-    pageRows: HTMLInputElement;
+    enableQwen: HTMLInputElement = document.createElement('input');
+    qwenKey: HTMLInputElement = document.createElement('input');
+    qwenRegion: HTMLSelectElement = document.createElement('select');
+    qwenModel: HTMLInputElement = document.createElement('input');
+    qwenFixTags: HTMLInputElement = document.createElement('input');
 
-    filtersTable: HTMLTableElement;
+    defaultEnglish: HTMLSelectElement = document.createElement('select');
+    defaultPortuguese: HTMLSelectElement = document.createElement('select');
+    defaultSpanish: HTMLSelectElement = document.createElement('select');
+
+    os: string = '';
+    showGuide: boolean = false;
+
+    pageRows: HTMLInputElement = document.createElement('input');
+
+    filtersTable: HTMLTableElement = document.createElement('table');
     selected: Map<string, string>;
+    modelSuggestionsLoaded: boolean = false;
+    modelSuggestionsLoading: boolean = false;
 
     constructor() {
 
@@ -78,36 +103,37 @@ class PreferencesDialog {
 
         this.tabHolder = new TabHolder(document.getElementById('main') as HTMLDivElement, "preferencesHolder");
 
-        let basicTab: Tab = new Tab('basicTab', 'Basic', false);
+        let basicTab: Tab = new Tab('basicTab', 'Basic', false, this.tabHolder);
         basicTab.getLabelDiv().addEventListener('click', () => {
             setTimeout(() => {
-                this.electron.ipcRenderer.send('set-height', { window: 'preferences', width: PreferencesDialog.defaultWidth, height: document.body.clientHeight });
+                ipcRenderer.send('set-height', { window: 'preferences', width: PreferencesDialog.defaultWidth, height: document.body.clientHeight });
             }, 200);
         });
         this.tabHolder.addTab(basicTab);
         this.populateBasicTab(basicTab.getContainer());
 
-        let mtTab: Tab = new Tab('mtTab', 'Machine Translation', false);
+        let mtTab: Tab = new Tab('mtTab', 'Machine Translation', false, this.tabHolder);
         mtTab.getLabelDiv().addEventListener('click', () => {
+            this.requestModelSuggestions();
             setTimeout(() => {
-                this.electron.ipcRenderer.send('set-height', { window: 'preferences', width: PreferencesDialog.defaultWidth, height: document.body.clientHeight });
+                ipcRenderer.send('set-height', { window: 'preferences', width: PreferencesDialog.defaultWidth, height: document.body.clientHeight });
             }, 200);
         });
         this.tabHolder.addTab(mtTab);
         this.populateMtTab(mtTab.getContainer());
 
-        this.spellcheckTab = new Tab('spellcheckTab', 'Spellchecker', false);
+        this.spellcheckTab = new Tab('spellcheckTab', 'Spellchecker', false, this.tabHolder);
         this.spellcheckTab.getLabelDiv().addEventListener('click', () => {
             setTimeout(() => {
-                this.electron.ipcRenderer.send('set-height', { window: 'preferences', width: PreferencesDialog.defaultWidth, height: document.body.clientHeight });
+                ipcRenderer.send('set-height', { window: 'preferences', width: PreferencesDialog.defaultWidth, height: document.body.clientHeight });
             }, 200);
         });
         this.tabHolder.addTab(this.spellcheckTab);
 
-        let advancedTab: Tab = new Tab('advancedTab', 'Advanced', false);
+        let advancedTab: Tab = new Tab('advancedTab', 'Advanced', false, this.tabHolder);
         advancedTab.getLabelDiv().addEventListener('click', () => {
             setTimeout(() => {
-                this.electron.ipcRenderer.send('set-height', { window: 'preferences', width: PreferencesDialog.defaultWidth, height: document.body.clientHeight });
+                ipcRenderer.send('set-height', { window: 'preferences', width: PreferencesDialog.defaultWidth, height: document.body.clientHeight });
             }, 200);
         });
         this.tabHolder.addTab(advancedTab);
@@ -115,66 +141,85 @@ class PreferencesDialog {
 
         this.tabHolder.selectTab('basicTab');
 
-        this.electron.ipcRenderer.send('get-theme');
-        this.electron.ipcRenderer.on('set-languages', (event: Electron.IpcRendererEvent, arg: any) => {
+        ipcRenderer.send('get-theme');
+        ipcRenderer.on('set-languages', (event: IpcRendererEvent, arg: any) => {
             this.setLanguages(arg);
         });
 
-        this.electron.ipcRenderer.on('set-mt-languages', (event: Electron.IpcRendererEvent, arg: any) => {
+        ipcRenderer.on('set-mt-languages', (event: IpcRendererEvent, arg: any) => {
             this.setMtLanguages(arg);
         });
 
-        this.electron.ipcRenderer.on('set-theme', (event: Electron.IpcRendererEvent, arg: any) => {
-            (document.getElementById('theme') as HTMLLinkElement).href = arg;
+        ipcRenderer.on('set-theme', (event: IpcRendererEvent, theme: string) => {
+            (document.getElementById('theme') as HTMLLinkElement).href = theme;
         });
-        this.electron.ipcRenderer.on('set-preferences', (event: Electron.IpcRendererEvent, preferences: any) => {
+        ipcRenderer.on('start-waiting', () => {
+            document.body.classList.add('wait');
+        });
+        ipcRenderer.on('end-waiting', () => {
+            document.body.classList.remove('wait');
+        });
+        ipcRenderer.on('set-preferences', (event: IpcRendererEvent, preferences: any) => {
             this.setPreferences(preferences);
         });
-        document.getElementById('browseProjects').addEventListener('click', () => {
-            this.electron.ipcRenderer.send('browse-projects');
+        ipcRenderer.on('set-ai-models', (event: IpcRendererEvent, models: { ChatGPT?: string[], Claude?: string[], Mistral?: string[] }) => {
+            this.applyModelSuggestions(models);
         });
-        document.getElementById('browseMemories').addEventListener('click', () => {
-            this.electron.ipcRenderer.send('browse-memories');
+        ipcRenderer.on('ai-models-error', () => {
+            this.modelSuggestionsLoading = false;
+            this.modelSuggestionsLoaded = false;
         });
-        document.getElementById('browseGlossaries').addEventListener('click', () => {
-            this.electron.ipcRenderer.send('browse-glossaries');
+        (document.getElementById('browseProjects') as HTMLButtonElement).addEventListener('click', () => {
+            ipcRenderer.send('browse-projects');
         });
-        document.getElementById('browseSRX').addEventListener('click', () => {
-            this.electron.ipcRenderer.send('browse-srx');
+        (document.getElementById('browseMemories') as HTMLButtonElement).addEventListener('click', () => {
+            ipcRenderer.send('browse-memories');
         });
-        document.getElementById('browseCatalog').addEventListener('click', () => {
-            this.electron.ipcRenderer.send('browse-catalog');
+        (document.getElementById('browseGlossaries') as HTMLButtonElement).addEventListener('click', () => {
+            ipcRenderer.send('browse-glossaries');
         });
-        document.getElementById('save').addEventListener('click', () => {
+        (document.getElementById('browseSRX') as HTMLButtonElement).addEventListener('click', () => {
+            ipcRenderer.send('browse-srx');
+        });
+        (document.getElementById('browseReviewModel') as HTMLButtonElement).addEventListener('click', () => {
+            ipcRenderer.send('browse-review-model');
+        });
+        (document.getElementById('browseCatalog') as HTMLButtonElement).addEventListener('click', () => {
+            ipcRenderer.send('browse-catalog');
+        });
+        (document.getElementById('save') as HTMLButtonElement).addEventListener('click', () => {
             this.savePreferences();
         });
-        this.electron.ipcRenderer.on('set-srx', (event: Electron.IpcRendererEvent, arg: string) => {
+        ipcRenderer.on('set-srx', (event: IpcRendererEvent, arg: string) => {
             this.defaultSRX.value = arg;
         });
-        this.electron.ipcRenderer.on('set-projects-folder', (event: Electron.IpcRendererEvent, arg: string) => {
+        ipcRenderer.on('set-review-model', (event: IpcRendererEvent, arg: string) => {
+            this.defaultReviewModel.value = arg;
+        });
+        ipcRenderer.on('set-projects-folder', (event: IpcRendererEvent, arg: string) => {
             this.projectFolder.value = arg;
         });
-        this.electron.ipcRenderer.on('set-memories-folder', (event: Electron.IpcRendererEvent, arg: string) => {
+        ipcRenderer.on('set-memories-folder', (event: IpcRendererEvent, arg: string) => {
             this.memoriesFolder.value = arg;
         });
-        this.electron.ipcRenderer.on('set-glossaries-folder', (event: Electron.IpcRendererEvent, arg: string) => {
+        ipcRenderer.on('set-glossaries-folder', (event: IpcRendererEvent, arg: string) => {
             this.glossariesFolder.value = arg;
         });
-        this.electron.ipcRenderer.on('set-catalog', (event: Electron.IpcRendererEvent, arg: string) => {
+        ipcRenderer.on('set-catalog', (event: IpcRendererEvent, arg: string) => {
             this.defaultCatalog.value = arg;
         });
         document.addEventListener('keydown', (event: KeyboardEvent) => {
             if (event.code === 'Escape') {
-                this.electron.ipcRenderer.send('close-preferences');
+                ipcRenderer.send('close-preferences');
             }
         });
         this.selected = new Map<string, string>();
-        this.electron.ipcRenderer.send('get-xmlFilters');
-        this.electron.ipcRenderer.on('xmlFilters', (event: Electron.IpcRendererEvent, arg: any) => {
+        ipcRenderer.send('get-xmlFilters');
+        ipcRenderer.on('xmlFilters', (event: IpcRendererEvent, arg: any) => {
             this.setFilters(arg);
         });
         setTimeout(() => {
-            this.electron.ipcRenderer.send('set-height', { window: 'preferences', width: PreferencesDialog.defaultWidth, height: document.body.clientHeight });
+            ipcRenderer.send('set-height', { window: 'preferences', width: PreferencesDialog.defaultWidth, height: document.body.clientHeight });
         }, 200);
     }
 
@@ -183,10 +228,12 @@ class PreferencesDialog {
         this.srcLangSelect.value = preferences.srcLang;
         this.tgtLangSelect.value = preferences.tgtLang;
         this.zoomFactor.value = preferences.zoomFactor;
+        this.userNameInput.value = preferences.userName;
         this.projectFolder.value = preferences.projectsFolder;
         this.memoriesFolder.value = preferences.memoriesFolder;
         this.glossariesFolder.value = preferences.glossariesFolder;
         this.defaultSRX.value = preferences.srx;
+        this.defaultReviewModel.value = preferences.reviewModel;
         this.defaultCatalog.value = preferences.catalog;
         this.acceptUnconfirmed.checked = preferences.acceptUnconfirmed;
         this.paragraphSegmentation.checked = preferences.paragraphSegmentation;
@@ -194,6 +241,7 @@ class PreferencesDialog {
         this.caseSensitiveTermSearches.checked = preferences.caseSensitiveSearches;
         this.caseSensitiveMatches.checked = preferences.caseSensitiveMatches;
         this.autoConfirm.checked = preferences.autoConfirm;
+        this.matchThreshold.value = preferences.matchThreshold.toString();
 
         this.enableGoogle.checked = preferences.google.enabled;
         this.googleKey.value = preferences.google.apiKey;
@@ -239,9 +287,54 @@ class PreferencesDialog {
         this.chatGPTModel.value = preferences.chatGpt.model;
         this.chatGPTKey.disabled = !preferences.chatGpt.enabled;
         this.chatGPTModel.disabled = !preferences.chatGpt.enabled;
+        this.chatGptFixTags.checked = preferences.chatGpt.fixTags;
+        this.chatGptFixTags.disabled = !preferences.chatGpt.enabled;
         this.enableChatGPT.addEventListener('change', () => {
             this.chatGPTKey.disabled = !this.enableChatGPT.checked;
             this.chatGPTModel.disabled = !this.enableChatGPT.checked;
+            this.chatGptFixTags.disabled = !this.enableChatGPT.checked;
+        });
+
+        this.enableAnthropic.checked = preferences.anthropic.enabled;
+        this.anthropicKey.value = preferences.anthropic.apiKey;
+        this.anthropicModel.value = preferences.anthropic.model;
+        this.anthropicKey.disabled = !preferences.anthropic.enabled;
+        this.anthropicModel.disabled = !preferences.anthropic.enabled;
+        this.anthropicFixTags.checked = preferences.anthropic.fixTags;
+        this.anthropicFixTags.disabled = !preferences.anthropic.enabled;
+        this.enableAnthropic.addEventListener('change', () => {
+            this.anthropicKey.disabled = !this.enableAnthropic.checked;
+            this.anthropicModel.disabled = !this.enableAnthropic.checked;
+            this.anthropicFixTags.disabled = !this.enableAnthropic.checked;
+        });
+
+        this.enableMistral.checked = preferences.mistral.enabled;
+        this.mistralKey.value = preferences.mistral.apiKey;
+        this.mistralModel.value = preferences.mistral.model;
+        this.mistralKey.disabled = !preferences.mistral.enabled;
+        this.mistralModel.disabled = !preferences.mistral.enabled;
+        this.mistralFixTags.checked = preferences.mistral.fixTags;
+        this.mistralFixTags.disabled = !preferences.mistral.enabled;
+        this.enableMistral.addEventListener('change', () => {
+            this.mistralKey.disabled = !this.enableMistral.checked;
+            this.mistralModel.disabled = !this.enableMistral.checked;
+            this.mistralFixTags.disabled = !this.enableMistral.checked;
+        });
+
+        this.enableQwen.checked = preferences.qwen.enabled;
+        this.qwenKey.value = preferences.qwen.apiKey;
+        this.qwenRegion.value = preferences.qwen.region;
+        this.qwenModel.value = preferences.qwen.model;
+        this.qwenKey.disabled = !preferences.qwen.enabled;
+        this.qwenRegion.disabled = !preferences.qwen.enabled;
+        this.qwenModel.disabled = !preferences.qwen.enabled;
+        this.qwenFixTags.checked = preferences.qwen.fixTags;
+        this.qwenFixTags.disabled = !preferences.qwen.enabled;
+        this.enableQwen.addEventListener('change', () => {
+            this.qwenKey.disabled = !this.enableQwen.checked;
+            this.qwenRegion.disabled = !this.enableQwen.checked;
+            this.qwenModel.disabled = !this.enableQwen.checked;
+            this.qwenFixTags.disabled = !this.enableQwen.checked;
         });
 
         this.enableModernmt.checked = preferences.modernmt.enabled;
@@ -262,60 +355,83 @@ class PreferencesDialog {
         this.pageRows.value = preferences.pageRows.toString();
         this.populateSpellcheckTab(this.spellcheckTab.getContainer(), preferences.spellchecker);
 
-        this.electron.ipcRenderer.send('preferences-set');
+        ipcRenderer.send('preferences-set');
     }
 
     setLanguages(arg: any): void {
-        let languageOptions = this.getOptions(arg.languages)
+        let languageOptions: string = this.getOptions(arg.languages)
 
         this.srcLangSelect.innerHTML = languageOptions;
         this.tgtLangSelect.innerHTML = languageOptions;
 
-        this.electron.ipcRenderer.send('get-preferences');
+        ipcRenderer.send('get-preferences');
     }
 
     savePreferences(): void {
+        if (this.matchThreshold.valueAsNumber < 0 || this.matchThreshold.valueAsNumber > 100) {
+            ipcRenderer.send('show-message', { type: 'warning', message: 'Set a match threshold between 0 and 100', parent: 'preferences' });
+            return;
+        }
         if (this.pageRows.valueAsNumber < 100 || this.pageRows.valueAsNumber > 2000) {
-            this.electron.ipcRenderer.send('show-message', { type: 'warning', message: 'Set a number of rows per page between 100 and 2000', parent: 'preferences' });
+            ipcRenderer.send('show-message', { type: 'warning', message: 'Set a number of rows per page between 100 and 2000', parent: 'preferences' });
             return;
         }
         if (this.enableGoogle.checked && this.googleKey.value === '') {
-            this.electron.ipcRenderer.send('show-message', { type: 'warning', message: 'Enter Google API key', parent: 'preferences' });
+            ipcRenderer.send('show-message', { type: 'warning', message: 'Enter Google API key', parent: 'preferences' });
             return;
         }
         if (this.enableGoogle.checked && (this.googleSrcLang.value === 'none' || this.googleTgtLang.value === 'none')) {
-            this.electron.ipcRenderer.send('show-message', { type: 'warning', message: 'Select Google languages', parent: 'preferences' });
+            ipcRenderer.send('show-message', { type: 'warning', message: 'Select Google languages', parent: 'preferences' });
             return;
         }
-
         if (this.enableAzure.checked && this.azureKey.value === '') {
-            this.electron.ipcRenderer.send('show-message', { type: 'warning', message: 'Enter Azure API key', parent: 'preferences' });
+            ipcRenderer.send('show-message', { type: 'warning', message: 'Enter Azure API key', parent: 'preferences' });
             return;
         }
         if (this.enableAzure.checked && (this.azureSrcLang.value === 'none' || this.azureTgtLang.value === 'none')) {
-            this.electron.ipcRenderer.send('show-message', { type: 'warning', message: 'Select Azure languages', parent: 'preferences' });
+            ipcRenderer.send('show-message', { type: 'warning', message: 'Select Azure languages', parent: 'preferences' });
             return;
         }
         if (this.enableDeepL.checked && this.deeplKey.value === '') {
-            this.electron.ipcRenderer.send('show-message', { type: 'warning', message: 'Enter DeepL API key', parent: 'preferences' });
+            ipcRenderer.send('show-message', { type: 'warning', message: 'Enter DeepL API key', parent: 'preferences' });
             return;
         }
         if (this.enableDeepL.checked && (this.deeplSrcLang.value === 'none' || this.deeplTgtLang.value === 'none')) {
-            this.electron.ipcRenderer.send('show-message', { type: 'warning', message: 'Select DeepL languages', parent: 'preferences' });
+            ipcRenderer.send('show-message', { type: 'warning', message: 'Select DeepL languages', parent: 'preferences' });
+            return;
+        }
+        if (this.enableChatGPT.checked && this.chatGPTKey.value === '') {
+            ipcRenderer.send('show-message', { type: 'warning', message: 'Enter ChatGPT API key', parent: 'preferences' });
+            return;
+        }
+        if (this.enableQwen.checked && this.qwenKey.value === '') {
+            ipcRenderer.send('show-message', { type: 'warning', message: 'Enter Qwen API key', parent: 'preferences' });
+            return;
+        }
+        if (this.enableQwen.checked && this.qwenModel.value === '') {
+            ipcRenderer.send('show-message', { type: 'warning', message: 'Enter Qwen model', parent: 'preferences' });
+            return;
+        }
+        if (this.enableMistral.checked && this.mistralKey.value === '') {
+            ipcRenderer.send('show-message', { type: 'warning', message: 'Enter Mistral API key', parent: 'preferences' });
+            return;
+        }
+        if (this.enableMistral.checked && this.mistralModel.value.trim() === '') {
+            ipcRenderer.send('show-message', { type: 'warning', message: 'Enter Mistral model', parent: 'preferences' });
             return;
         }
 
-        if (this.enableChatGPT.checked && this.chatGPTKey.value === '') {
-            this.electron.ipcRenderer.send('show-message', { type: 'warning', message: 'Enter ChatGPT API key', parent: 'preferences' });
+        if (this.enableAnthropic.checked && this.anthropicModel.value.trim() === '') {
+            ipcRenderer.send('show-message', { type: 'warning', message: 'Enter Anthropic model', parent: 'preferences' });
             return;
         }
 
         if (this.enableModernmt.checked && this.modernmtKey.value === '') {
-            this.electron.ipcRenderer.send('show-message', { type: 'warning', message: 'Enter ModernMT API key', parent: 'preferences' });
+            ipcRenderer.send('show-message', { type: 'warning', message: 'Enter ModernMT API key', parent: 'preferences' });
             return;
         }
         if (this.enableModernmt.checked && (this.modernmtSrcLang.value === 'none' || this.modernmtTgtLang.value === 'none')) {
-            this.electron.ipcRenderer.send('show-message', { type: 'warning', message: 'Select ModernMT languages', parent: 'preferences' });
+            ipcRenderer.send('show-message', { type: 'warning', message: 'Select ModernMT languages', parent: 'preferences' });
             return;
         }
 
@@ -323,18 +439,22 @@ class PreferencesDialog {
             srcLang: this.srcLangSelect.value,
             tgtLang: this.tgtLangSelect.value,
             theme: this.themeColor.value,
+            appLang: 'en', // Application language preference hardcoded to 'en' for now
             zoomFactor: this.zoomFactor.value,
+            userName: this.userNameInput.value,
             catalog: this.defaultCatalog.value,
             projectsFolder: this.projectFolder.value,
             memoriesFolder: this.memoriesFolder.value,
             glossariesFolder: this.glossariesFolder.value,
             srx: this.defaultSRX.value,
+            reviewModel: this.defaultReviewModel.value,
             paragraphSegmentation: this.paragraphSegmentation.checked,
             acceptUnconfirmed: this.acceptUnconfirmed.checked,
             fuzzyTermSearches: this.fuzzyTermSearches.checked,
             caseSensitiveSearches: this.caseSensitiveTermSearches.checked,
             caseSensitiveMatches: this.caseSensitiveMatches.checked,
             autoConfirm: this.autoConfirm.checked,
+            matchThreshold: this.matchThreshold.valueAsNumber,
             google: {
                 enabled: this.enableGoogle.checked,
                 apiKey: this.googleKey.value,
@@ -356,7 +476,27 @@ class PreferencesDialog {
             chatGpt: {
                 enabled: this.enableChatGPT.checked,
                 apiKey: this.chatGPTKey.value,
-                model: this.chatGPTModel.value
+                model: this.chatGPTModel.value,
+                fixTags: this.chatGptFixTags.checked
+            },
+            anthropic: {
+                enabled: this.enableAnthropic.checked,
+                apiKey: this.anthropicKey.value,
+                model: this.anthropicModel.value,
+                fixTags: this.anthropicFixTags.checked
+            },
+            mistral: {
+                enabled: this.enableMistral.checked,
+                apiKey: this.mistralKey.value,
+                model: this.mistralModel.value,
+                fixTags: this.mistralFixTags.checked
+            },
+            qwen: {
+                enabled: this.enableQwen.checked,
+                apiKey: this.qwenKey.value,
+                region: this.qwenRegion.value,
+                model: this.qwenModel.value,
+                fixTags: this.qwenFixTags.checked
             },
             modernmt: {
                 enabled: this.enableModernmt.checked,
@@ -380,7 +520,7 @@ class PreferencesDialog {
                 defaultSpanish: this.defaultSpanish.value
             }
         }
-        this.electron.ipcRenderer.send('save-preferences', prefs);
+        ipcRenderer.send('save-preferences', prefs);
     }
 
     populateBasicTab(container: HTMLDivElement): void {
@@ -433,6 +573,33 @@ class PreferencesDialog {
         this.tgtLangSelect.classList.add('table_select');
         this.tgtLangSelect.id = 'tgtLangSelect';
         td.appendChild(this.tgtLangSelect);
+
+        tr = document.createElement('tr');
+        langsTable.appendChild(tr);
+
+        td = document.createElement('td');
+        td.classList.add('middle');
+        td.classList.add('noWrap');
+        tr.appendChild(td);
+
+        let matchThresholdLabel: HTMLLabelElement = document.createElement('label');
+        matchThresholdLabel.setAttribute('for', 'matchThreshold');
+        matchThresholdLabel.innerText = 'Match Threshold (%)';
+        td.appendChild(matchThresholdLabel);
+
+        td = document.createElement('td');
+        td.classList.add('middle');
+        td.classList.add('noWrap');
+        tr.appendChild(td);
+
+        this.matchThreshold = document.createElement('input');
+        this.matchThreshold.id = 'matchThreshold';
+        this.matchThreshold.type = 'number';
+        this.matchThreshold.min = '0';
+        this.matchThreshold.max = '100';
+        this.matchThreshold.step = '1';
+        this.matchThreshold.style.width = '48px';
+        td.appendChild(this.matchThreshold);
 
         tr = document.createElement('tr');
         langsTable.appendChild(tr);
@@ -512,6 +679,25 @@ class PreferencesDialog {
         this.pageRows.style.width = this.zoomFactor.clientWidth + 'px';
         td.appendChild(this.pageRows);
 
+        tr = document.createElement('tr');
+        langsTable.appendChild(tr);
+
+        td = document.createElement('td');
+        td.classList.add('middle');
+        td.classList.add('noWrap');
+        tr.appendChild(td);
+
+        let userNameLabel: HTMLLabelElement = document.createElement('label');
+        userNameLabel.setAttribute('for', 'userNameInput');
+        userNameLabel.innerText = 'Default User Name';
+        td.appendChild(userNameLabel);
+
+        td = document.createElement('td');
+        td.classList.add('middle');
+        tr.appendChild(td);
+
+        this.userNameInput.id = 'userNameInput';
+        td.appendChild(this.userNameInput);
     }
 
     populateSpellcheckTab(container: HTMLDivElement, spellchecker: any): void {
@@ -614,15 +800,17 @@ class PreferencesDialog {
             '<option value="es-US">Spanish (United States)</option>';
         td.appendChild(this.defaultSpanish);
 
+        let languagesButtonArea: HTMLDivElement = document.createElement('div');
+        languagesButtonArea.classList.add('buttonArea');
+        container.appendChild(languagesButtonArea);
+
         let languagesButton = document.createElement('button');
         languagesButton.innerText = 'Available Spellchecker Languages';
-        languagesButton.style.marginTop = '10px';
-        languagesButton.style.marginLeft = '8px';
         languagesButton.addEventListener('click', () => {
-            this.electron.ipcRenderer.send('show-spellchecker-langs');
+            ipcRenderer.send('show-spellchecker-langs');
             languagesButton.blur();
         });
-        container.appendChild(languagesButton);
+        languagesButtonArea.appendChild(languagesButton);
 
         this.defaultEnglish.value = spellchecker.defaultEnglish;
         this.defaultPortuguese.value = spellchecker.defaultPortuguese;
@@ -633,24 +821,24 @@ class PreferencesDialog {
         container.style.paddingTop = '10px';
 
         let div: HTMLDivElement = document.createElement('div');
-        div.style.margin = '0px 4px';
+        div.style.margin = '0px';
         container.appendChild(div);
 
         let advHolder: TabHolder = new TabHolder(div, 'advHolder');
 
-        let generalTab: Tab = new Tab('generalTab', 'General', false);
+        let generalTab: Tab = new Tab('generalTab', 'General', false, advHolder);
         generalTab.getLabelDiv().addEventListener('click', () => {
             setTimeout(() => {
-                this.electron.ipcRenderer.send('set-height', { window: 'preferences', width: PreferencesDialog.defaultWidth, height: document.body.clientHeight });
+                ipcRenderer.send('set-height', { window: 'preferences', width: PreferencesDialog.defaultWidth, height: document.body.clientHeight });
             }, 200);
         });
         advHolder.addTab(generalTab);
         this.populateAdvGeneralTab(generalTab.getContainer());
 
-        let xmlTab: Tab = new Tab('xmlTab', 'XML Filter', false);
+        let xmlTab: Tab = new Tab('xmlTab', 'XML Filter', false, advHolder);
         xmlTab.getLabelDiv().addEventListener('click', () => {
             setTimeout(() => {
-                this.electron.ipcRenderer.send('set-height', { window: 'preferences', width: PreferencesDialog.defaultWidth, height: document.body.clientHeight });
+                ipcRenderer.send('set-height', { window: 'preferences', width: PreferencesDialog.defaultWidth, height: document.body.clientHeight });
             }, 200);
         });
         advHolder.addTab(xmlTab);
@@ -778,10 +966,43 @@ class PreferencesDialog {
         td.innerHTML = '<button id="browseSRX" class="dark">Browse...</button>';
         tr.appendChild(td);
 
+        tr = document.createElement('tr');
+        table.appendChild(tr);
+
+        td = document.createElement('td');
+        td.classList.add('middle');
+        td.classList.add('noWrap');
+        tr.appendChild(td);
+
+        let reviewModelLabel: HTMLLabelElement = document.createElement('label');
+        reviewModelLabel.setAttribute('for', 'defaultReviewModel');
+        reviewModelLabel.innerText = 'Default Review Model';
+        td.appendChild(reviewModelLabel);
+
+        td = document.createElement('td');
+        td.classList.add('middle');
+        td.classList.add('fill_width');
+        tr.appendChild(td);
+
+        this.defaultReviewModel = document.createElement('input');
+        this.defaultReviewModel.id = 'defaultReviewModel';
+        this.defaultReviewModel.type = 'text';
+        this.defaultReviewModel.classList.add('fill_width');
+        td.appendChild(this.defaultReviewModel);
+
+        td = document.createElement('td');
+        td.classList.add('middle');
+        td.innerHTML = '<button id="browseReviewModel" class="dark">Browse...</button>';
+        tr.appendChild(td);
+
+        let rowsHolder: HTMLDivElement = document.createElement('div');
+        rowsHolder.style.margin = '0px 4px';
+        container.appendChild(rowsHolder);
+
         let row1: HTMLDivElement = document.createElement('div');
         row1.classList.add('row');
         row1.classList.add('middle');
-        container.appendChild(row1);
+        rowsHolder.appendChild(row1);
 
         this.paragraphSegmentation = document.createElement('input');
         this.paragraphSegmentation.type = 'checkbox';
@@ -797,7 +1018,7 @@ class PreferencesDialog {
         let row2: HTMLDivElement = document.createElement('div');
         row2.classList.add('row');
         row2.classList.add('middle');
-        container.appendChild(row2);
+        rowsHolder.appendChild(row2);
 
         this.acceptUnconfirmed = document.createElement('input');
         this.acceptUnconfirmed.type = 'checkbox';
@@ -813,7 +1034,7 @@ class PreferencesDialog {
         let row3: HTMLDivElement = document.createElement('div');
         row3.classList.add('row');
         row3.classList.add('middle');
-        container.appendChild(row3);
+        rowsHolder.appendChild(row3);
 
         this.fuzzyTermSearches = document.createElement('input');
         this.fuzzyTermSearches.type = 'checkbox';
@@ -829,7 +1050,7 @@ class PreferencesDialog {
         let row4: HTMLDivElement = document.createElement('div');
         row4.classList.add('row');
         row4.classList.add('middle');
-        container.appendChild(row4);
+        rowsHolder.appendChild(row4);
 
         this.caseSensitiveTermSearches = document.createElement('input');
         this.caseSensitiveTermSearches.type = 'checkbox';
@@ -845,7 +1066,7 @@ class PreferencesDialog {
         let row5: HTMLDivElement = document.createElement('div');
         row5.classList.add('row');
         row5.classList.add('middle');
-        container.appendChild(row5);
+        rowsHolder.appendChild(row5);
 
         this.caseSensitiveMatches = document.createElement('input');
         this.caseSensitiveMatches.type = 'checkbox';
@@ -861,7 +1082,7 @@ class PreferencesDialog {
         let row6: HTMLDivElement = document.createElement('div');
         row6.classList.add('row');
         row6.classList.add('middle');
-        container.appendChild(row6);
+        rowsHolder.appendChild(row6);
 
         this.autoConfirm = document.createElement('input');
         this.autoConfirm.type = 'checkbox';
@@ -873,7 +1094,6 @@ class PreferencesDialog {
         autoConfirmLabel.setAttribute('for', 'autoConfirm');
         autoConfirmLabel.style.marginTop = '4px';
         row6.appendChild(autoConfirmLabel);
-
     }
 
     populateXmlFilterTab(container: HTMLDivElement): void {
@@ -929,8 +1149,7 @@ class PreferencesDialog {
         tableDiv.appendChild(this.filtersTable);
 
         let buttonArea: HTMLDivElement = document.createElement('div');
-        buttonArea.classList.add('fill_width');
-        buttonArea.classList.add('butonArea');
+        buttonArea.classList.add('buttonArea');
         container.appendChild(buttonArea);
 
         let addButton: HTMLButtonElement = document.createElement('button');
@@ -957,7 +1176,7 @@ class PreferencesDialog {
         let importButton: HTMLButtonElement = document.createElement('button');
         importButton.innerText = 'Import';
         importButton.addEventListener('click', () => {
-            this.electron.ipcRenderer.send('import-xmlFilter');
+            ipcRenderer.send('import-xmlFilter');
         });
         buttonArea.appendChild(importButton);
 
@@ -974,54 +1193,267 @@ class PreferencesDialog {
 
         let div: HTMLDivElement = document.createElement('div');
         div.style.margin = '0px 4px';
+        div.style.paddingLeft = '8px';
+        div.style.paddingBottom = '8px';
         container.appendChild(div);
 
-        let mtHolder: TabHolder = new TabHolder(div, 'mtHolder');
+        let verticalTabs: HTMLDivElement = document.createElement('div');
+        verticalTabs.classList.add('row');
+        container.appendChild(verticalTabs);
 
-        let googleTab: Tab = new Tab('googleTab', 'Google', false);
-        googleTab.getLabelDiv().addEventListener('click', () => {
-            setTimeout(() => {
-                this.electron.ipcRenderer.send('set-height', { window: 'preferences', width: PreferencesDialog.defaultWidth, height: document.body.clientHeight });
-            }, 200);
-        });
-        mtHolder.addTab(googleTab);
-        this.populateGoogleTab(googleTab.getContainer());
+        let leftSide: HTMLDivElement = document.createElement('div');
+        leftSide.style.paddingLeft = '8px';
+        leftSide.style.paddingBottom = '8px';
+        verticalTabs.appendChild(leftSide);
 
-        let azureTab: Tab = new Tab('azureTab', 'Microsoft Azure', false);
-        azureTab.getLabelDiv().addEventListener('click', () => {
-            setTimeout(() => {
-                this.electron.ipcRenderer.send('set-height', { window: 'preferences', width: PreferencesDialog.defaultWidth, height: document.body.clientHeight });
-            }, 200);
-        });
-        mtHolder.addTab(azureTab);
-        this.populateAzureTab(azureTab.getContainer());
+        let radioRow: HTMLDivElement = document.createElement('div');
+        radioRow.classList.add('row');
+        radioRow.classList.add('middle');
+        leftSide.appendChild(radioRow);
 
-        let deeplTab: Tab = new Tab('deeplTab', 'DeepL', false);
-        deeplTab.getLabelDiv().addEventListener('click', () => {
-            setTimeout(() => {
-                this.electron.ipcRenderer.send('set-height', { window: 'preferences', width: PreferencesDialog.defaultWidth, height: document.body.clientHeight });
-            }, 200);
-        });
-        mtHolder.addTab(deeplTab);
-        this.populateDeeplTab(deeplTab.getContainer());
+        let googleRadio: HTMLInputElement = document.createElement('input');
+        googleRadio.type = 'radio';
+        googleRadio.name = 'mtProvider';
+        googleRadio.id = 'googleRadio';
+        googleRadio.style.margin = '4px';
+        googleRadio.checked = true;
+        radioRow.appendChild(googleRadio);
 
-        let chatGptTab: Tab = new Tab('chatGptTab', 'ChatGPT', false);
-        chatGptTab.getLabelDiv().addEventListener('click', () => {
-            setTimeout(() => {
-                this.electron.ipcRenderer.send('set-height', { window: 'preferences', width: PreferencesDialog.defaultWidth, height: document.body.clientHeight });
-            }, 200);
-        });
-        mtHolder.addTab(chatGptTab);
-        this.populateChatGptTab(chatGptTab.getContainer());
+        let googleLabel: HTMLLabelElement = document.createElement('label');
+        googleLabel.setAttribute('for', 'googleRadio');
+        googleLabel.innerText = 'Google';
+        googleLabel.style.marginTop = '4px';
+        radioRow.appendChild(googleLabel);
 
-        let modernmtTab: Tab = new Tab('modernmtTab', 'ModernMT', false);
-        modernmtTab.getLabelDiv().addEventListener('click', () => {
-            setTimeout(() => {
-                this.electron.ipcRenderer.send('set-height', { window: 'preferences', width: PreferencesDialog.defaultWidth, height: document.body.clientHeight });
-            }, 200);
+        radioRow = document.createElement('div');
+        radioRow.classList.add('row');
+        radioRow.classList.add('middle');
+        leftSide.appendChild(radioRow);
+
+        let azureRadio: HTMLInputElement = document.createElement('input');
+        azureRadio.type = 'radio';
+        azureRadio.name = 'mtProvider';
+        azureRadio.id = 'azureRadio';
+        azureRadio.style.margin = '4px';
+        radioRow.appendChild(azureRadio);
+
+        let azureLabel: HTMLLabelElement = document.createElement('label');
+        azureLabel.setAttribute('for', 'azureRadio');
+        azureLabel.innerText = 'Microsoft Azure';
+        azureLabel.style.marginTop = '4px';
+        azureLabel.style.whiteSpace = 'nowrap';
+        radioRow.appendChild(azureLabel);
+
+        radioRow = document.createElement('div');
+        radioRow.classList.add('row');
+        radioRow.classList.add('middle');
+        leftSide.appendChild(radioRow);
+
+        let deeplRadio: HTMLInputElement = document.createElement('input');
+        deeplRadio.type = 'radio';
+        deeplRadio.name = 'mtProvider';
+        deeplRadio.id = 'deeplRadio';
+        deeplRadio.style.margin = '4px';
+        radioRow.appendChild(deeplRadio);
+
+        let deeplLabel: HTMLLabelElement = document.createElement('label');
+        deeplLabel.setAttribute('for', 'deeplRadio');
+        deeplLabel.innerText = 'DeepL';
+        deeplLabel.style.marginTop = '4px';
+        radioRow.appendChild(deeplLabel);
+
+        radioRow = document.createElement('div');
+        radioRow.classList.add('row');
+        radioRow.classList.add('middle');
+        leftSide.appendChild(radioRow);
+
+        let chatGptRadio: HTMLInputElement = document.createElement('input');
+        chatGptRadio.type = 'radio';
+        chatGptRadio.name = 'mtProvider';
+        chatGptRadio.id = 'chatGptRadio';
+        chatGptRadio.style.margin = '4px';
+        radioRow.appendChild(chatGptRadio);
+
+        let chatGptLabel: HTMLLabelElement = document.createElement('label');
+        chatGptLabel.setAttribute('for', 'chatGptRadio');
+        chatGptLabel.innerText = 'ChatGPT';
+        chatGptLabel.style.marginTop = '4px';
+        radioRow.appendChild(chatGptLabel);
+
+        radioRow = document.createElement('div');
+        radioRow.classList.add('row');
+        radioRow.classList.add('middle');
+        leftSide.appendChild(radioRow);
+
+        let mistralRadio: HTMLInputElement = document.createElement('input');
+        mistralRadio.type = 'radio';
+        mistralRadio.name = 'mtProvider';
+        mistralRadio.id = 'mistralRadio';
+        mistralRadio.style.margin = '4px';
+        radioRow.appendChild(mistralRadio);
+
+        let mistralLabel: HTMLLabelElement = document.createElement('label');
+        mistralLabel.setAttribute('for', 'mistralRadio');
+        mistralLabel.innerText = 'Mistral';
+        mistralLabel.style.marginTop = '4px';
+        radioRow.appendChild(mistralLabel);
+
+        radioRow = document.createElement('div');
+        radioRow.classList.add('row');
+        radioRow.classList.add('middle');
+        leftSide.appendChild(radioRow);
+
+        let qwenRadio: HTMLInputElement = document.createElement('input');
+        qwenRadio.type = 'radio';
+        qwenRadio.name = 'mtProvider';
+        qwenRadio.id = 'qwenRadio';
+        qwenRadio.style.margin = '4px';
+        radioRow.appendChild(qwenRadio);
+
+        let qwenLabel: HTMLLabelElement = document.createElement('label');
+        qwenLabel.setAttribute('for', 'qwenRadio');
+        qwenLabel.innerText = 'Qwen';
+        qwenLabel.style.marginTop = '4px';
+        qwenLabel.classList.add('noWrap');
+        radioRow.appendChild(qwenLabel);
+
+        radioRow = document.createElement('div');
+        radioRow.classList.add('row');
+        radioRow.classList.add('middle');
+        leftSide.appendChild(radioRow);
+
+        let anthropicRadio: HTMLInputElement = document.createElement('input');
+        anthropicRadio.type = 'radio';
+        anthropicRadio.name = 'mtProvider';
+        anthropicRadio.id = 'anthropicRadio';
+        anthropicRadio.style.margin = '4px';
+        radioRow.appendChild(anthropicRadio);
+
+        let anthropicLabel: HTMLLabelElement = document.createElement('label');
+        anthropicLabel.setAttribute('for', 'anthropicRadio');
+        anthropicLabel.innerText = 'Claude';
+        anthropicLabel.style.marginTop = '4px';
+        radioRow.appendChild(anthropicLabel);
+
+        radioRow = document.createElement('div');
+        radioRow.classList.add('row');
+        radioRow.classList.add('middle');
+        leftSide.appendChild(radioRow);
+
+        let modernmtRadio: HTMLInputElement = document.createElement('input');
+        modernmtRadio.type = 'radio';
+        modernmtRadio.name = 'mtProvider';
+        modernmtRadio.id = 'modernmtRadio';
+        modernmtRadio.style.margin = '4px';
+        radioRow.appendChild(modernmtRadio);
+
+        let modernmtLabel: HTMLLabelElement = document.createElement('label');
+        modernmtLabel.setAttribute('for', 'modernmtRadio');
+        modernmtLabel.innerText = 'ModernMT';
+        modernmtLabel.style.marginTop = '4px';
+        radioRow.appendChild(modernmtLabel);
+
+        let rightSide: HTMLDivElement = document.createElement('div');
+        rightSide.classList.add('fill_width');
+        rightSide.style.marginRight = '16px';
+        rightSide.style.marginBottom = '8px';
+        rightSide.classList.add('borderedArea');
+
+        verticalTabs.appendChild(rightSide);
+        let googleTab: HTMLDivElement = document.createElement('div');
+        googleTab.id = 'googleTab';
+        rightSide.appendChild(googleTab);
+        this.populateGoogleTab(googleTab);
+
+        let azureTab: HTMLDivElement = document.createElement('div');
+        azureTab.id = 'azureTab';
+        azureTab.style.display = 'none';
+        rightSide.appendChild(azureTab);
+        this.populateAzureTab(azureTab);
+
+        let deeplTab: HTMLDivElement = document.createElement('div');
+        deeplTab.id = 'deeplTab';
+        deeplTab.style.display = 'none';
+        rightSide.appendChild(deeplTab);
+        this.populateDeeplTab(deeplTab);
+
+        let chatGptTab: HTMLDivElement = document.createElement('div');
+        chatGptTab.id = 'chatGptTab';
+        chatGptTab.style.display = 'none';
+        rightSide.appendChild(chatGptTab);
+        this.populateChatGptTab(chatGptTab);
+
+        let mistralTab: HTMLDivElement = document.createElement('div');
+        mistralTab.id = 'mistralTab';
+        mistralTab.style.display = 'none';
+        rightSide.appendChild(mistralTab);
+        this.populateMistralTab(mistralTab);
+
+        let qwenTab: HTMLDivElement = document.createElement('div');
+        qwenTab.id = 'qwenTab';
+        qwenTab.style.display = 'none';
+        rightSide.appendChild(qwenTab);
+        this.populateqwenTab(qwenTab);
+
+        let anthropicTab: HTMLDivElement = document.createElement('div');
+        anthropicTab.id = 'anthropicTab';
+        anthropicTab.style.display = 'none';
+        rightSide.appendChild(anthropicTab);
+        this.populateAnthropicTab(anthropicTab);
+
+        let modernmtTab: HTMLDivElement = document.createElement('div');
+        modernmtTab.id = 'modernmtTab';
+        modernmtTab.style.display = 'none';
+        rightSide.appendChild(modernmtTab);
+        this.populateModernmtTab(modernmtTab);
+
+        googleRadio.addEventListener('change', () => {
+            console.log('show google tab');
+            this.toggleTab('googleTab');
         });
-        mtHolder.addTab(modernmtTab);
-        this.populateModernmtTab(modernmtTab.getContainer());
+        azureRadio.addEventListener('change', () => {
+            console.log('show azure tab');
+            this.toggleTab('azureTab');
+        });
+        deeplRadio.addEventListener('change', () => {
+            console.log('show deepl tab');
+            this.toggleTab('deeplTab');
+        });
+        chatGptRadio.addEventListener('change', () => {
+            console.log('show chatgpt tab');
+            this.toggleTab('chatGptTab');
+        });
+        mistralRadio.addEventListener('change', () => {
+            console.log('show mistral tab');
+            this.toggleTab('mistralTab');
+        });
+        qwenRadio.addEventListener('change', () => {
+            console.log('show Qwen tab');
+            this.toggleTab('qwenTab');
+        });
+        anthropicRadio.addEventListener('change', () => {
+            console.log('show anthropic tab');
+            this.toggleTab('anthropicTab');
+        });
+        modernmtRadio.addEventListener('change', () => {
+            console.log('show modernmt tab');
+            this.toggleTab('modernmtTab');
+        });
+    }
+
+    toggleTab(tabId: string): void {
+        const tabs: string[] = ['googleTab', 'azureTab', 'deeplTab',
+            'chatGptTab', 'mistralTab', 'qwenTab', 'anthropicTab', 'modernmtTab'];
+        tabs.forEach((id) => {
+            const tab = document.getElementById(id);
+            if (tab) {
+                if (id === tabId) {
+                    tab.style.display = 'block';
+                } else {
+                    tab.style.display = 'none';
+                }
+            }
+        });
     }
 
     populateGoogleTab(container: HTMLDivElement): void {
@@ -1260,19 +1692,296 @@ class PreferencesDialog {
         td = document.createElement('td');
         td.classList.add('middle');
         td.classList.add('fill_width');
-
-        td.innerHTML = '<select id="chatGPTModel" class="table_select">' +
-            '<option value="gpt-4o">gpt-4o</option>' +
-            '<option value="gpt-4o-mini">gpt-4o-mini</option>' +
-            '<option value="gpt-4">gpt-4</option>' +
-            '<option value="gpt-4-turbo">gpt-4-turbo</option>' +
-            '<option value="gpt-3.5-turbo">gpt-3.5-turbo</option>' +
-            '</select>';
+        let chatGptModelInput: HTMLInputElement = document.createElement('input');
+        chatGptModelInput.type = 'text';
+        chatGptModelInput.id = 'chatGPTModel';
+        chatGptModelInput.classList.add('table_input');
+        chatGptModelInput.setAttribute('list', 'chatGptModelsList');
+        td.appendChild(chatGptModelInput);
         tr.appendChild(td);
+
+        let chatGptDatalist: HTMLDataListElement = document.createElement('datalist');
+        chatGptDatalist.id = 'chatGptModelsList';
+        container.appendChild(chatGptDatalist);
+
+        let tagsRow: HTMLDivElement = document.createElement('div');
+        tagsRow.classList.add('row');
+        tagsRow.classList.add('middle');
+        container.appendChild(tagsRow);
+
+        this.chatGptFixTags.id = 'chatGptFixTags';
+        this.chatGptFixTags.type = 'checkbox';
+        this.chatGptFixTags.addEventListener('change', () => {
+            if (this.chatGptFixTags.checked) {
+                this.anthropicFixTags.checked = false;
+                this.mistralFixTags.checked = false;
+                this.qwenFixTags.checked = false;
+            }
+        });
+        tagsRow.appendChild(this.chatGptFixTags);
+
+        let fixLabel: HTMLLabelElement = document.createElement('label');
+        fixLabel.innerText = 'Use to Fix Tags';
+        fixLabel.setAttribute('for', 'chatGptFixTags');
+        fixLabel.style.paddingTop = '4px';
+        tagsRow.appendChild(fixLabel);
 
         this.enableChatGPT = document.getElementById('enableChatGPT') as HTMLInputElement;
         this.chatGPTKey = document.getElementById('chatGPTKey') as HTMLInputElement;
-        this.chatGPTModel = document.getElementById('chatGPTModel') as HTMLSelectElement;
+        this.chatGPTModel = document.getElementById('chatGPTModel') as HTMLInputElement;
+    }
+
+    populateMistralTab(container: HTMLDivElement): void {
+        container.style.paddingTop = '10px';
+
+        let mistralDiv: HTMLDivElement = document.createElement('div');
+        mistralDiv.classList.add('middle');
+        mistralDiv.classList.add('row');
+        mistralDiv.style.paddingLeft = '4px';
+        mistralDiv.innerHTML = '<input type="checkbox" id="enableMistral"><label for="enableMistral" style="padding-top:4px;">Enable Mistral Translation</label>';
+        container.appendChild(mistralDiv);
+
+        let infoTable: HTMLTableElement = document.createElement('table');
+        infoTable.classList.add('fill_width');
+        container.appendChild(infoTable);
+
+        let tr: HTMLTableRowElement = document.createElement('tr');
+        infoTable.appendChild(tr);
+
+        let td: HTMLTableCellElement = document.createElement('td');
+        td.classList.add('middle');
+        td.classList.add('noWrap');
+        td.innerHTML = '<label for="mistralKey">API Key</label>'
+        tr.appendChild(td);
+
+        td = document.createElement('td');
+        td.classList.add('middle');
+        td.classList.add('fill_width');
+        td.innerHTML = '<input type="text" id="mistralKey" class="table_input"/>';
+        tr.appendChild(td);
+
+        tr = document.createElement('tr');
+        infoTable.appendChild(tr);
+
+        td = document.createElement('td');
+        td.classList.add('middle');
+        td.classList.add('noWrap');
+        td.innerHTML = '<label for="mistralModel">Mistral Model</label>'
+        tr.appendChild(td);
+
+        td = document.createElement('td');
+        td.classList.add('middle');
+        td.classList.add('fill_width');
+        let mistralModelInput: HTMLInputElement = document.createElement('input');
+        mistralModelInput.type = 'text';
+        mistralModelInput.id = 'mistralModel';
+        mistralModelInput.classList.add('table_input');
+        mistralModelInput.setAttribute('list', 'mistralModelsList');
+        td.appendChild(mistralModelInput);
+        tr.appendChild(td);
+
+        let mistralDatalist: HTMLDataListElement = document.createElement('datalist');
+        mistralDatalist.id = 'mistralModelsList';
+        container.appendChild(mistralDatalist);
+
+        let tagsRow: HTMLDivElement = document.createElement('div');
+        tagsRow.classList.add('row');
+        tagsRow.classList.add('middle');
+        container.appendChild(tagsRow);
+
+        this.mistralFixTags.id = 'mistralFixTags';
+        this.mistralFixTags.type = 'checkbox';
+        this.mistralFixTags.addEventListener('change', () => {
+            if (this.mistralFixTags.checked) {
+                this.chatGptFixTags.checked = false;
+                this.anthropicFixTags.checked = false;
+                this.qwenFixTags.checked = false;
+            }
+        });
+        tagsRow.appendChild(this.mistralFixTags);
+
+        let fixLabel: HTMLLabelElement = document.createElement('label');
+        fixLabel.innerText = 'Use to Fix Tags';
+        fixLabel.setAttribute('for', 'mistralFixTags');
+        fixLabel.style.paddingTop = '4px';
+        tagsRow.appendChild(fixLabel);
+
+        this.enableMistral = document.getElementById('enableMistral') as HTMLInputElement;
+        this.mistralKey = document.getElementById('mistralKey') as HTMLInputElement;
+        this.mistralModel = document.getElementById('mistralModel') as HTMLInputElement;
+    }
+
+    populateqwenTab(container: HTMLDivElement): void {
+        container.style.paddingTop = '10px';
+
+        let QwenDiv: HTMLDivElement = document.createElement('div');
+        QwenDiv.classList.add('middle');
+        QwenDiv.classList.add('row');
+        QwenDiv.style.paddingLeft = '4px';
+        QwenDiv.innerHTML = '<input type="checkbox" id="enableQwen"><label for="enableQwen" style="padding-top:4px;">Enable Qwen Translation</label>';
+        container.appendChild(QwenDiv);
+
+        let infoTable: HTMLTableElement = document.createElement('table');
+        infoTable.classList.add('fill_width');
+        container.appendChild(infoTable);
+
+        let tr: HTMLTableRowElement = document.createElement('tr');
+        infoTable.appendChild(tr);
+
+        let td: HTMLTableCellElement = document.createElement('td');
+        td.classList.add('middle');
+        td.classList.add('noWrap');
+        td.innerHTML = '<label for="qwenKey">API Key</label>'
+        tr.appendChild(td);
+
+        td = document.createElement('td');
+        td.classList.add('middle');
+        td.classList.add('fill_width');
+        td.innerHTML = '<input type="text" id="qwenKey" class="table_input"/>';
+        tr.appendChild(td);
+
+        tr = document.createElement('tr');
+        infoTable.appendChild(tr);
+
+        td = document.createElement('td');
+        td.classList.add('middle');
+        td.classList.add('noWrap');
+        td.innerHTML = '<label for="QwenRegion">Region</label>'
+        tr.appendChild(td);
+
+        td = document.createElement('td');
+        td.classList.add('middle');
+        td.classList.add('fill_width');
+        td.appendChild(this.qwenRegion);
+        tr.appendChild(td);
+
+        let options: string = '<option value="Singapore">Singapore</option><option value="Virginia">US (Virginia)</option><option value="Beijing">China (Beijing)</option>';
+        this.qwenRegion.innerHTML = options;
+
+
+        tr = document.createElement('tr');
+        infoTable.appendChild(tr);
+
+        td = document.createElement('td');
+        td.classList.add('middle');
+        td.classList.add('noWrap');
+        td.innerHTML = '<label for="qwenModel">Qwen Model</label>'
+        tr.appendChild(td);
+
+        td = document.createElement('td');
+        td.classList.add('middle');
+        td.classList.add('fill_width');
+
+        let qwenModelInput: HTMLInputElement = document.createElement('input');
+        qwenModelInput.type = 'text';
+        qwenModelInput.id = 'qwenModel';
+        qwenModelInput.classList.add('table_input');
+        qwenModelInput.setAttribute('list', 'qwenModelsList');
+        td.appendChild(qwenModelInput);
+        tr.appendChild(td);
+
+        let qwenDatalist: HTMLDataListElement = document.createElement('datalist');
+        qwenDatalist.id = 'qwenModelsList';
+        container.appendChild(qwenDatalist);
+
+        let tagsRow: HTMLDivElement = document.createElement('div');
+        tagsRow.classList.add('row');
+        tagsRow.classList.add('middle');
+        container.appendChild(tagsRow);
+
+        this.qwenFixTags.id = 'qwenFixTags';
+        this.qwenFixTags.type = 'checkbox';
+        this.qwenFixTags.addEventListener('change', () => {
+            if (this.qwenFixTags.checked) {
+                this.chatGptFixTags.checked = false;
+                this.anthropicFixTags.checked = false;
+                this.mistralFixTags.checked = false;
+            }
+        });
+        tagsRow.appendChild(this.qwenFixTags);
+
+        let fixLabel: HTMLLabelElement = document.createElement('label');
+        fixLabel.innerText = 'Use to Fix Tags';
+        fixLabel.setAttribute('for', 'qwenFixTags');
+        fixLabel.style.paddingTop = '4px';
+        tagsRow.appendChild(fixLabel);
+
+        this.enableQwen = document.getElementById('enableQwen') as HTMLInputElement;
+        this.qwenKey = document.getElementById('qwenKey') as HTMLInputElement;
+        this.qwenModel = document.getElementById('qwenModel') as HTMLInputElement;
+    }
+
+    populateAnthropicTab(container: HTMLDivElement): void {
+        container.style.paddingTop = '10px';
+        let anthropicDiv: HTMLDivElement = document.createElement('div');
+        anthropicDiv.classList.add('middle');
+        anthropicDiv.classList.add('row');
+        anthropicDiv.style.paddingLeft = '4px';
+        anthropicDiv.innerHTML = '<input type="checkbox" id="enableAnthropic"><label for="enableAnthropic" style="padding-top:4px;">Enable Claude Translation</label>';
+        container.appendChild(anthropicDiv);
+        let langsTable: HTMLTableElement = document.createElement('table');
+        langsTable.classList.add('fill_width');
+        container.appendChild(langsTable);
+        let tr: HTMLTableRowElement = document.createElement('tr');
+        langsTable.appendChild(tr);
+        let td: HTMLTableCellElement = document.createElement('td');
+        td.classList.add('middle');
+        td.classList.add('noWrap');
+        td.innerHTML = '<label for="anthropicKey">API Key</label>'
+        tr.appendChild(td);
+        td = document.createElement('td');
+        td.classList.add('middle');
+        td.classList.add('fill_width');
+        td.innerHTML = '<input type="text" id="anthropicKey" class="table_input"/>';
+        tr.appendChild(td);
+        tr = document.createElement('tr');
+        langsTable.appendChild(tr);
+        td = document.createElement('td');
+        td.classList.add('middle');
+        td.classList.add('noWrap');
+        td.innerHTML = '<label for="anthropicModel">Claude Model</label>'
+        tr.appendChild(td);
+
+        td = document.createElement('td');
+        td.classList.add('middle');
+        td.classList.add('fill_width');
+        let anthropicModelInput: HTMLInputElement = document.createElement('input');
+        anthropicModelInput.type = 'text';
+        anthropicModelInput.id = 'anthropicModel';
+        anthropicModelInput.classList.add('table_input');
+        anthropicModelInput.setAttribute('list', 'anthropicModelsList');
+        td.appendChild(anthropicModelInput);
+        tr.appendChild(td);
+
+        let anthropicDatalist: HTMLDataListElement = document.createElement('datalist');
+        anthropicDatalist.id = 'anthropicModelsList';
+        container.appendChild(anthropicDatalist);
+
+        let tagsRow: HTMLDivElement = document.createElement('div');
+        tagsRow.classList.add('row');
+        tagsRow.classList.add('middle');
+        container.appendChild(tagsRow);
+
+        this.anthropicFixTags.id = 'anthropicFixTags';
+        this.anthropicFixTags.type = 'checkbox';
+        tagsRow.appendChild(this.anthropicFixTags);
+        this.anthropicFixTags.addEventListener('change', () => {
+            if (this.anthropicFixTags.checked) {
+                this.chatGptFixTags.checked = false;
+                this.mistralFixTags.checked = false;
+                this.qwenFixTags.checked = false;
+            }
+        });
+
+        let fixLabel: HTMLLabelElement = document.createElement('label');
+        fixLabel.innerText = 'Use to Fix Tags';
+        fixLabel.setAttribute('for', 'anthropicFixTags');
+        fixLabel.style.paddingTop = '4px';
+        tagsRow.appendChild(fixLabel);
+
+        this.enableAnthropic = document.getElementById('enableAnthropic') as HTMLInputElement;
+        this.anthropicKey = document.getElementById('anthropicKey') as HTMLInputElement;
+        this.anthropicModel = document.getElementById('anthropicModel') as HTMLInputElement;
     }
 
     populateModernmtTab(container: HTMLDivElement): void {
@@ -1340,6 +2049,39 @@ class PreferencesDialog {
         this.modernmtTgtLang = document.getElementById('modernmtTgtLang') as HTMLSelectElement;
     }
 
+    requestModelSuggestions(): void {
+        if (this.modelSuggestionsLoaded || this.modelSuggestionsLoading) {
+            return;
+        }
+        this.modelSuggestionsLoading = true;
+        ipcRenderer.send('get-ai-models');
+    }
+
+    applyModelSuggestions(models: { ChatGPT?: string[], Claude?: string[], Mistral?: string[], Qwen?: string[] }): void {
+        this.modelSuggestionsLoading = false;
+        this.modelSuggestionsLoaded = true;
+        this.populateModelList('chatGptModelsList', models.ChatGPT);
+        this.populateModelList('anthropicModelsList', models.Claude);
+        this.populateModelList('mistralModelsList', models.Mistral);
+        this.populateModelList('qwenModelsList', models.Qwen);
+    }
+
+    populateModelList(listId: string, options?: string[]): void {
+        if (!options || options.length === 0) {
+            return;
+        }
+        let datalist: HTMLDataListElement | null = document.getElementById(listId) as HTMLDataListElement;
+        if (!datalist) {
+            return;
+        }
+        datalist.innerHTML = '';
+        for (let value of options) {
+            let option: HTMLOptionElement = document.createElement('option');
+            option.value = value;
+            datalist.appendChild(option);
+        }
+    }
+
     setMtLanguages(arg: any): void {
         this.googleSrcLang.innerHTML = this.getOptions(arg.google.srcLangs);
         this.googleTgtLang.innerHTML = this.getOptions(arg.google.tgtLangs);
@@ -1356,12 +2098,12 @@ class PreferencesDialog {
         this.googleSrcLang.innerHTML = this.getOptions(arg.google.srcLangs);
         this.googleTgtLang.innerHTML = this.getOptions(arg.google.tgtLangs);
 
-        this.electron.ipcRenderer.send('get-languages');
+        ipcRenderer.send('get-languages');
         document.body.classList.remove("wait");
     }
 
-    getOptions(array: any[]): string {
-        let languageOptions = '<option value="none">Select Language</option>';
+    getOptions(array: Language[]): string {
+        let languageOptions: string = '<option value="none">Select Language</option>';
         for (let lang of array) {
             languageOptions = languageOptions + '<option value="' + lang.code + '">' + lang.description + '</option>';
         }
@@ -1405,45 +2147,46 @@ class PreferencesDialog {
     }
 
     addFilter(): void {
-        this.electron.ipcRenderer.send('show-addXmlConfiguration');
+        ipcRenderer.send('show-addXmlConfiguration');
     }
 
     editFilter(): void {
         if (this.selected.size === 0) {
-            this.electron.ipcRenderer.send('show-message', { type: 'warning', message: 'Select configuration file', parent: 'preferences' });
+            ipcRenderer.send('show-message', { type: 'warning', message: 'Select configuration file', parent: 'preferences' });
             return;
         }
         if (this.selected.size !== 1) {
-            this.electron.ipcRenderer.send('show-message', { type: 'warning', message: 'Select one configuration file', parent: 'preferences' });
+            ipcRenderer.send('show-message', { type: 'warning', message: 'Select one configuration file', parent: 'preferences' });
             return;
         }
         let it: IterableIterator<[string, string]> = this.selected.entries();
         let first: IteratorResult<[string, string]> = it.next();
-        this.electron.ipcRenderer.send('edit-filterConfig', { file: this.selected.get(first.value[0]) });
+        ipcRenderer.send('edit-filterConfig', { file: this.selected.get(first.value[0]) });
     }
 
     removeFilters(): void {
         if (this.selected.size === 0) {
-            this.electron.ipcRenderer.send('show-message', { type: 'warning', message: 'Select configuration file', parent: 'preferences' });
+            ipcRenderer.send('show-message', { type: 'warning', message: 'Select configuration file', parent: 'preferences' });
             return;
         }
         let selectedFiles: string[] = [];
         for (let key of this.selected.keys()) {
             selectedFiles.push(key);
         }
-        this.electron.ipcRenderer.send('remove-xmlFilters', { files: selectedFiles });
+        ipcRenderer.send('remove-xmlFilters', { files: selectedFiles });
     }
 
     exportFilters(): void {
         if (this.selected.size === 0) {
-            this.electron.ipcRenderer.send('show-message', { type: 'warning', message: 'Select configuration file', parent: 'preferences' });
+            ipcRenderer.send('show-message', { type: 'warning', message: 'Select configuration file', parent: 'preferences' });
             return;
         }
         let selectedFiles: string[] = [];
         for (let key of this.selected.keys()) {
             selectedFiles.push(key);
         }
-        this.electron.ipcRenderer.send('export-xmlFilters', { files: selectedFiles });
+        ipcRenderer.send('export-xmlFilters', { files: selectedFiles });
     }
+
 }
 

@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (c) 2007 - 2025 Maxprograms.
+ * Copyright (c) 2007-2026 Maxprograms.
  *
  * This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License 1.0
@@ -10,25 +10,26 @@
  *     Maxprograms - initial API and implementation
  *******************************************************************************/
 
-class DefaultLanguages {
+import { ipcRenderer, IpcRendererEvent } from "electron";
+import { Language } from "typesbcp47";
 
-    electron = require('electron');
+export class DefaultLanguages {
 
     constructor() {
-        this.electron.ipcRenderer.send('get-theme');
-        this.electron.ipcRenderer.send('get-languages');
-        this.electron.ipcRenderer.on('set-languages', (event: Electron.IpcRendererEvent, arg: any) => {
+        ipcRenderer.send('get-theme');
+        ipcRenderer.send('get-languages');
+        ipcRenderer.on('set-languages', (event: IpcRendererEvent, arg: any) => {
             this.setLanguages(arg);
         });
-        this.electron.ipcRenderer.on('set-theme', (event: Electron.IpcRendererEvent, arg: any) => {
-            (document.getElementById('theme') as HTMLLinkElement).href = arg;
+        ipcRenderer.on('set-theme', (event: IpcRendererEvent, theme: string) => {
+            (document.getElementById('theme') as HTMLLinkElement).href = theme;
         });
-        document.getElementById('save').addEventListener('click', () => {
+        (document.getElementById('save') as HTMLButtonElement).addEventListener('click', () => {
             this.savePreferences();
         });
         document.addEventListener('keydown', (event: KeyboardEvent) => {
             if (event.code === 'Escape') {
-                this.electron.ipcRenderer.send('close-defaultLangs');
+                ipcRenderer.send('close-defaultLangs');
             }
             if (event.code === 'Enter' || event.code === 'NumpadEnter') {
                 this.savePreferences();
@@ -36,19 +37,19 @@ class DefaultLanguages {
         });
         (document.getElementById('srcLangSelect') as HTMLSelectElement).focus();
         setTimeout(() => {
-            this.electron.ipcRenderer.send('set-height', { window: 'defaultLangs', width: document.body.clientWidth, height: document.body.clientHeight });
+            ipcRenderer.send('set-height', { window: 'defaultLangs', width: document.body.clientWidth, height: document.body.clientHeight });
         }, 200);
     }
 
     setLanguages(arg: any): void {
-        let array = arg.languages;
-        let languageOptions = '<option value="none">Select Language</option>';
+        let array: Language[] = arg.languages;
+        let languageOptions: string = '<option value="none">Select Language</option>';
         for (let lang of array) {
             languageOptions = languageOptions + '<option value="' + lang.code + '">' + lang.description + '</option>';
         }
-        document.getElementById('srcLangSelect').innerHTML = languageOptions;
-        document.getElementById('tgtLangSelect').innerHTML = languageOptions;
-        this.electron.ipcRenderer.send('get-preferences');
+        (document.getElementById('srcLangSelect') as HTMLSelectElement).innerHTML = languageOptions;
+        (document.getElementById('tgtLangSelect') as HTMLSelectElement).innerHTML = languageOptions;
+        ipcRenderer.send('get-preferences');
     }
 
     savePreferences(): void {
@@ -56,6 +57,6 @@ class DefaultLanguages {
             srcLang: (document.getElementById('srcLangSelect') as HTMLSelectElement).value,
             tgtLang: (document.getElementById('tgtLangSelect') as HTMLSelectElement).value,
         }
-        this.electron.ipcRenderer.send('save-languages', prefs);
+        ipcRenderer.send('save-languages', prefs);
     }
 }

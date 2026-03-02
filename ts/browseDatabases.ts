@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (c) 2007 - 2025 Maxprograms.
+ * Copyright (c) 2007-2026 Maxprograms.
  *
  * This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License 1.0
@@ -9,33 +9,23 @@
  * Contributors:
  *     Maxprograms - initial API and implementation
  *******************************************************************************/
+import { ipcRenderer, IpcRendererEvent } from "electron";
+import { Database } from "./database.js";
 
-class Database {
-    id: string;
-    name: string;
-    owner: string;
-    project: string;
-    subject: string;
-    client: string;
-    creationDate: string;
-    open: boolean;
-}
+export class BrowseDatabases {
 
-class BrowseDatabases {
-
-    electron = require('electron');
     databases: any;
     selected: Map<string, Database>;
 
     constructor() {
         this.selected = new Map<string, Database>();
-        this.electron.ipcRenderer.send('get-theme');
-        this.electron.ipcRenderer.on('set-theme', (event: Electron.IpcRendererEvent, arg: any) => {
-            (document.getElementById('theme') as HTMLLinkElement).href = arg;
+        ipcRenderer.send('get-theme');
+        ipcRenderer.on('set-theme', (event: IpcRendererEvent, theme: string) => {
+            (document.getElementById('theme') as HTMLLinkElement).href = theme;
         });
-        document.getElementById('container').style.height = '250px';
-        this.electron.ipcRenderer.send('get-databases');
-        this.electron.ipcRenderer.on('set-databases', (event: Electron.IpcRendererEvent, arg: any) => {
+        (document.getElementById('container') as HTMLDivElement).style.height = '250px';
+        ipcRenderer.send('get-databases');
+        ipcRenderer.on('set-databases', (event: IpcRendererEvent, arg: any) => {
             this.setDatabases(arg);
         });
         document.addEventListener('keydown', (event: KeyboardEvent) => {
@@ -43,18 +33,18 @@ class BrowseDatabases {
                 this.addSelected();
             }
             if (event.code === 'Escape') {
-                this.electron.ipcRenderer.send('close-browseServer');
+                ipcRenderer.send('close-browseServer');
             }
         });
-        document.getElementById('addButton').addEventListener('click', () => {
+        (document.getElementById('addButton') as HTMLButtonElement).addEventListener('click', () => {
             this.addSelected();
         });
         setTimeout(() => {
-            this.electron.ipcRenderer.send('set-height', { window: 'browseDatabases', width: document.body.clientWidth, height: document.body.clientHeight });
+            ipcRenderer.send('set-height', { window: 'browseDatabases', width: document.body.clientWidth, height: document.body.clientHeight });
         }, 200);
     }
 
-    setDatabases(arg: any) {
+    setDatabases(arg: any): void {
         this.databases = arg;
         let tbody = document.getElementById('tbody') as HTMLTableSectionElement;
         let length = this.databases.memories.length;
@@ -95,19 +85,19 @@ class BrowseDatabases {
             tr.appendChild(td);
             td.innerText = database.client;
         }
-        document.getElementById('addButton').innerText = arg.type === 'memory' ? 'Add Memory' : 'Add Glossary';
+        (document.getElementById('addButton') as HTMLButtonElement).innerText = arg.type === 'memory' ? 'Add Memory' : 'Add Glossary';
     }
 
     addSelected(): void {
         if (this.selected.size === 0) {
-            this.electron.ipcRenderer.send('show-message', { type: 'warning', message: 'Select one or more rows', parent: 'browseDatabases' });
+            ipcRenderer.send('show-message', { type: 'warning', message: 'Select one or more rows', parent: 'browseDatabases' });
             return;
         }
         let selectedList: any[] = [];
         this.selected.forEach((database) => {
             selectedList.push(database);
         });
-        this.electron.ipcRenderer.send('add-databases', {
+        ipcRenderer.send('add-databases', {
             type: this.databases.type, databases: selectedList,
             server: this.databases.server, user: this.databases.user,
             password: this.databases.password

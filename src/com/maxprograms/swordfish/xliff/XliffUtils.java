@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (c) 2007 - 2025 Maxprograms.
+ * Copyright (c) 2007-2026 Maxprograms.
  *
  * This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License 1.0
@@ -36,7 +36,6 @@ import com.maxprograms.converters.FileFormats;
 import com.maxprograms.swordfish.Constants;
 import com.maxprograms.swordfish.TmsServer;
 import com.maxprograms.swordfish.tm.TMUtils;
-import com.maxprograms.xml.Attribute;
 import com.maxprograms.xml.Document;
 import com.maxprograms.xml.Element;
 import com.maxprograms.xml.Indenter;
@@ -173,28 +172,6 @@ public class XliffUtils {
 		return res;
 	}
 
-	public static String getHeader(Element e) {
-		StringBuilder result = new StringBuilder();
-		result.append('<');
-		result.append(e.getName());
-		List<Attribute> atts = e.getAttributes();
-		Iterator<Attribute> it = atts.iterator();
-		while (it.hasNext()) {
-			Attribute a = it.next();
-			result.append(' ');
-			result.append(a.getName());
-			result.append("=\"");
-			result.append(unquote(cleanString(a.getValue())));
-			result.append("\"");
-		}
-		result.append('>');
-		return result.toString();
-	}
-
-	public static String getTail(Element e) {
-		return "</" + e.getName() + ">";
-	}
-
 	public static String cleanString(String string) {
 		return string.replace("&", "&amp;").replace("<", "&lt;");
 	}
@@ -304,6 +281,11 @@ public class XliffUtils {
 			prop.setText(context[1]);
 			tu.addContent(prop);
 		}
+		Element meta = new Element("prop");
+		meta.setAttribute("type", "xliff-segment");
+		meta.setText(key);
+		tu.addContent(meta);
+
 		Element tuv = new Element("tuv");
 		tuv.setAttribute("xml:lang", srcLang);
 		tuv.setAttribute("creationdate", creationDate);
@@ -391,7 +373,8 @@ public class XliffUtils {
 						}
 					}
 				}
-				if ("project".equals(group.getAttributeValue("category"))) {
+				if ("project".equals(group.getAttributeValue("category"))
+						|| "reviewProject".equals(group.getAttributeValue("category"))) {
 					List<Element> metaList = group.getChildren("mda:meta");
 					Iterator<Element> mt = metaList.iterator();
 					while (mt.hasNext()) {
@@ -581,14 +564,18 @@ public class XliffUtils {
 
 	private static void recurseRemoving(Element e, String project) {
 		if ("xliff".equals(e.getName())) {
-			e.setAttribute("version", "2.0");
+			e.setAttribute("version", "2.1");
 		}
 		if ("file".equals(e.getName())) {
 			e.removeChild("skeleton");
 			e.setAttribute("canResegment", "no");
 			Element metaData = e.getChild("mda:metadata");
 			Element metaGroup = new Element("mda:metaGroup");
-			metaGroup.setAttribute("category", "project");
+			metaGroup.setAttribute("category", "reviewProject");
+			Element version = new Element("mda:meta");
+			version.setAttribute("type", Constants.APPNAME);
+			version.setText(Constants.VERSION);
+			metaGroup.addContent(version);
 			Element meta = new Element("mda:meta");
 			meta.setAttribute("type", "id");
 			meta.setText(project);
@@ -602,5 +589,36 @@ public class XliffUtils {
 		while (it.hasNext()) {
 			recurseRemoving(it.next(), project);
 		}
+	}
+
+	public static boolean isSwordfishReview(String fileName) {
+		try {
+			SAXBuilder builder = new SAXBuilder();
+			Document doc = builder.build(new File(fileName));
+			Element root = doc.getRootElement();
+			if ("xliff".equals(root.getName())) {
+				Element file = root.getChild("file");
+				if (file != null) {
+					Element metadata = file.getChild("mda:metadata");
+					if (metadata != null) {
+						List<Element> metaGroups = metadata.getChildren("mda:metaGroup");
+						for (Element group : metaGroups) {
+							if ("project".equals(group.getAttributeValue("category"))
+									|| "reviewProject".equals(group.getAttributeValue("category"))) {
+								List<Element> metas = group.getChildren("mda:meta");
+								for (Element meta : metas) {
+									if (Constants.APPNAME.equals(meta.getAttributeValue("type"))) {
+										return true;
+									}
+								}
+							}
+						}
+					}
+				}
+			}
+		} catch (Exception e) {
+			// do nothing
+		}
+		return false;
 	}
 }
