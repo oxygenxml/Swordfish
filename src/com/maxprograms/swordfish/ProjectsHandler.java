@@ -375,7 +375,7 @@ public class ProjectsHandler implements HttpHandler {
 		obj.put(Constants.PROGRESS, Constants.PROCESSING);
 		processes.put(id, obj);
 		try {
-			new Thread(() -> {
+			new Thread(() -> { // OXYGEN START PATCH (use Java 17 threads)
 				try {
 					projectStores.get(project).exportTranslations(output);
 					obj.put(Constants.PROGRESS, Constants.COMPLETED);
@@ -386,7 +386,7 @@ public class ProjectsHandler implements HttpHandler {
 					obj.put(Constants.REASON, e.getMessage());
 					processes.put(id, obj);
 				}
-			}).start();
+			}).start(); // OXYGEN END PATCH
 		} catch (Exception e) {
 			logger.log(Level.ERROR, Messages.getString("ProjectsHandler.4"), e);
 			result.put(Constants.REASON, e.getMessage());
@@ -418,7 +418,7 @@ public class ProjectsHandler implements HttpHandler {
 		obj.put(Constants.PROGRESS, Constants.PROCESSING);
 		processes.put(id, obj);
 		try {
-			new Thread(() -> {
+			new Thread(() -> { // OXYGEN START PATCH (use Java 17 threads)
 				try {
 					projectStores.get(project).exportXliff(output);
 					obj.put(Constants.PROGRESS, Constants.COMPLETED);
@@ -429,7 +429,7 @@ public class ProjectsHandler implements HttpHandler {
 					obj.put(Constants.REASON, e.getMessage());
 					processes.put(id, obj);
 				}
-			}).start();
+			}).start(); // OXYGEN END PATCH
 		} catch (Exception e) {
 			logger.log(Level.ERROR, Messages.getString("ProjectsHandler.4"), e);
 			result.put(Constants.REASON, e.getMessage());
@@ -470,7 +470,7 @@ public class ProjectsHandler implements HttpHandler {
 				obj.put(Constants.PROGRESS, Constants.PROCESSING);
 				processes.put(id, obj);
 				try {
-					new Thread(() -> {
+					new Thread(() -> { // OXYGEN START PATCH (use Java 17 threads)
 						try {
 							projectStores.get(project).importXliff(xliff);
 							obj.put(Constants.PROGRESS, Constants.COMPLETED);
@@ -481,7 +481,7 @@ public class ProjectsHandler implements HttpHandler {
 							obj.put(Constants.REASON, e.getMessage());
 							processes.put(id, obj);
 						}
-					}).start();
+					}).start(); // OXYGEN END PATCH
 				} catch (Exception e) {
 					logger.log(Level.ERROR, Messages.getString("ProjectsHandler.4"), e);
 					result.put(Constants.REASON, e.getMessage());
@@ -570,7 +570,7 @@ public class ProjectsHandler implements HttpHandler {
 		obj.put(Constants.PROGRESS, Constants.PROCESSING);
 		processes.put(id, obj);
 		try {
-			new Thread(() -> {
+			new Thread(() -> { // OXYGEN START PATCH (use Java 17 threads)
 				try {
 					Map<String, Project> projects = getProjects();
 					Project prj = projects.get(project);
@@ -584,7 +584,7 @@ public class ProjectsHandler implements HttpHandler {
 					obj.put(Constants.REASON, e.getMessage());
 					processes.put(id, obj);
 				}
-			}).start();
+			}).start(); // OXYGEN END PATCH
 		} catch (Exception e) {
 			logger.log(Level.ERROR, Messages.getString("ProjectsHandler.6"), e);
 			result.put(Constants.REASON, e.getMessage());
@@ -616,7 +616,7 @@ public class ProjectsHandler implements HttpHandler {
 		obj.put(Constants.PROGRESS, Constants.PROCESSING);
 		processes.put(id, obj);
 		try {
-			new Thread(() -> {
+			new Thread(() -> { // OXYGEN START PATCH (use Java 17 threads)
 				try {
 					Map<String, Project> projects = getProjects();
 					Project prj = projects.get(project);
@@ -630,7 +630,7 @@ public class ProjectsHandler implements HttpHandler {
 					obj.put(Constants.REASON, e.getMessage());
 					processes.put(id, obj);
 				}
-			}).start();
+			}).start(); // OXYGEN END PATCH
 		} catch (Exception e) {
 			logger.log(Level.ERROR, Messages.getString("ProjectsHandler.6"), e);
 			result.put(Constants.REASON, e.getMessage());
@@ -662,7 +662,7 @@ public class ProjectsHandler implements HttpHandler {
 		obj.put(Constants.PROGRESS, Constants.PROCESSING);
 		processes.put(id, obj);
 		try {
-			new Thread(() -> {
+			new Thread(() -> { // OXYGEN START PATCH (use Java 17 threads)
 				try {
 					Map<String, Project> projects = getProjects();
 					Project prj = projects.get(project);
@@ -675,7 +675,7 @@ public class ProjectsHandler implements HttpHandler {
 					obj.put(Constants.REASON, e.getMessage());
 					processes.put(id, obj);
 				}
-			}).start();
+			}).start(); // OXYGEN END PATCH
 		} catch (Exception e) {
 			logger.log(Level.ERROR, Messages.getString("ProjectsHandler.6"), e);
 			result.put(Constants.REASON, e.getMessage());
@@ -1300,7 +1300,7 @@ public class ProjectsHandler implements HttpHandler {
 			obj.put("percentage", 0);
 			obj.put(Constants.PROGRESS, Constants.PROCESSING);
 			processes.put(id, obj);
-			new Thread(() -> {
+			new Thread(() -> { // OXYGEN START PATCH (use Java 17 threads)
 				try {
 					obj.put("translated",
 							projectStores.get(project).tmTranslateAll(memory, penalization, processes, id));
@@ -1313,7 +1313,7 @@ public class ProjectsHandler implements HttpHandler {
 					obj.put(Constants.REASON, e.getMessage());
 					processes.put(id, obj);
 				}
-			}).start();
+			}).start(); // OXYGEN END PATCH	
 		} catch (Exception e) {
 			logger.log(Level.ERROR, e.getMessage(), e);
 			result.put(Constants.REASON, e.getMessage());
@@ -1405,7 +1405,7 @@ public class ProjectsHandler implements HttpHandler {
 			if (!xliffFile.exists()) {
 				throw new IOException(Messages.getString("ProjectsHandler.17"));
 			}
-			new Thread(() -> {
+			new Thread(() -> { // OXYGEN START PATCH (use Java 17 threads)
 				try {
 					JSONObject details = XliffUtils.getProjectDetails(xliffFile);
 					Project p = new Project(id, description, Project.NEW,
@@ -1439,7 +1439,7 @@ public class ProjectsHandler implements HttpHandler {
 					obj.put(Constants.REASON, e.getMessage());
 					processes.put(id, obj);
 				}
-			}).start();
+			}).start(); // OXYGEN END PATCH
 		} catch (IOException e) {
 			logger.log(Level.ERROR, e);
 			result.put(Constants.STATUS, Constants.ERROR);
@@ -1573,7 +1573,7 @@ public class ProjectsHandler implements HttpHandler {
 			JSONObject obj = new JSONObject();
 			obj.put(Constants.PROGRESS, Constants.PROCESSING);
 			processes.put(id, obj);
-			new Thread(() -> {
+			new Thread(() -> { // OXYGEN START PATCH (use Java 17 threads)
 				try {
 					JSONObject json = new JSONObject(request);
 					String project = json.getString("project");
@@ -1593,7 +1593,7 @@ public class ProjectsHandler implements HttpHandler {
 					obj.put(Constants.REASON, e.getMessage());
 					processes.put(id, obj);
 				}
-			}).start();
+			}).start(); // OXYGEN END PATCH
 		} catch (JSONException e) {
 			logger.log(Level.ERROR, e);
 			result.put(Constants.REASON, e.getMessage());
@@ -1701,7 +1701,7 @@ public class ProjectsHandler implements HttpHandler {
 		JSONObject obj = new JSONObject();
 		obj.put(Constants.PROGRESS, Constants.PROCESSING);
 		processes.put(id, obj);
-		new Thread(() -> {
+		new Thread(() -> { // OXYGEN START PATCH (use Java 17 threads)
 			try {
 				JSONObject json = new JSONObject(request);
 				String project = json.getString("project");
@@ -1716,7 +1716,7 @@ public class ProjectsHandler implements HttpHandler {
 				obj.put(Constants.REASON, e.getMessage());
 				processes.put(id, obj);
 			}
-		}).start();
+		}).start(); // OXYGEN END PATCH
 		return result;
 	}
 
@@ -1778,7 +1778,7 @@ public class ProjectsHandler implements HttpHandler {
 		obj.put(Constants.PROGRESS, Constants.PROCESSING);
 		processes.put(id, obj);
 		try {
-			new Thread(() -> {
+			new Thread(() -> { // OXYGEN START PATCH (use Java 17 threads)
 				try {
 					String project = json.getString("project");
 					if (!projectStores.containsKey(project)) {
@@ -1796,7 +1796,7 @@ public class ProjectsHandler implements HttpHandler {
 					logger.log(Level.ERROR, e);
 					result.put(Constants.REASON, e.getMessage());
 				}
-			}).start();
+			}).start(); // OXYGEN END PATCH
 		} catch (JSONException e) {
 			result.put(Constants.REASON, e.getMessage());
 		}
