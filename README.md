@@ -1,3 +1,6 @@
+> [!IMPORTANT]
+> **This repository is archived.** It preserves the last open-source version before the license change. No further updates will be pushed here due to licensing restrictions.
+
 # Swordfish
 
 ![Swordfish logo](images/icon.png)
